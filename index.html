@@ -374,7 +374,7 @@
     </div>
 
     <ul id="menuList">
-      <li class="empty-hint">등록된 메뉴가 없습니다</li>
+      <li class="empty-hint">🤷‍♀️ NO LINK</li>
     </ul>
 
   </aside>
@@ -382,14 +382,14 @@
   <!-- ================= MAIN ================= -->
   <main id="main">
     <button id="closeContentBtn" class="pixel-btn">✕ CLOSE</button>
-    <button id="openNewTabBtn" class="pixel-btn">↗ 새 탭에서 열기</button>
+    <button id="openNewTabBtn" class="pixel-btn">↗ NEW TAP</button>
 
     <div id="waitingScreen">
       <div class="logo-big">KasiS</div>
       <div class="logo-big-sub">THE FORGOTTEN PATH</div>
       <div class="logo-tagline">A DOS ADVENTURE</div>
       <div class="logo-copyright">(C) 1991 PIXELCAT SOFTWARE</div>
-      <div class="logo-hint">▶ 메뉴를 선택하세요 ◀</div>
+      <div class="logo-hint">▶ Please select a mission ◀</div>
     </div>
 
     <iframe id="contentFrame"></iframe>
@@ -436,7 +436,7 @@ menuCollection.orderBy("createdAt", "asc").onSnapshot(snapshot => {
   menuListEl.innerHTML = "";
 
   if (snapshot.empty) {
-    menuListEl.innerHTML = `<li class="empty-hint">등록된 메뉴가 없습니다</li>`;
+    menuListEl.innerHTML = `<li class="empty-hint">🤷‍♀️ NO LINK</li>`;
     return;
   }
 
