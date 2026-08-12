@@ -36,6 +36,7 @@
     font-family:'Press Start 2P', monospace;
     color:var(--text);
     overflow:hidden;
+    cursor: url('./cursor.png') 0 0, auto;
   }
 
   /* -------- 픽셀 버튼(눌림 베벨) 공통 스타일 -------- */
@@ -338,7 +339,7 @@
     border:2px solid var(--green);
   }
   button, .pixel-btn, .menu-item {
-  cursor: url('cursor.png'), pointer !important;
+  cursor: url('./cursor.png'), pointer !important;
 }
   .confirm-actions .pixel-btn:hover{background:var(--green);color:#0e1a15;}
   #confirmYes{border-color:var(--danger) !important;}
