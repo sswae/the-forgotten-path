@@ -2,16 +2,18 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>KasiS — The Forgotten Path</title>
+<title>KsiS — The Forgotten Path</title>
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Press+Start+2P&family=Asta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 
 <!-- ============================================================
-  Firebase (compat SDK — 단일 파일 구조 유지를 위해 compat 버전 사용)
+  Firebase (compat SDK)
 ============================================================= -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- webp 이미지 저장을 위한 Storage 추가 -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
 <style>
   :root{
@@ -138,7 +140,8 @@
   }
   .field-input::placeholder{color:#9fbcae;opacity:.5;}
   .field-input:focus{border-color:var(--gold);}
-  .add-link-btn{
+  
+  .action-btn{
     align-self:flex-end;
     background:var(--green-dim);
     border:2px solid var(--green);
@@ -149,7 +152,24 @@
     cursor:pointer;
     padding:8px 10px;
   }
-  .add-link-btn:hover{background:var(--green);color:#0e1a15;}
+  .action-btn:hover{background:var(--green);color:#0e1a15;}
+
+  /* -------- standalone gallery toggle -------- */
+  .gallery-toggle-btn{
+    background:#0f1c16;
+    color:var(--gold);
+    font-family:'Press Start 2P', monospace;
+    font-size:12px;
+    letter-spacing:1px;
+    padding:14px 12px;
+    width:100%;
+    text-align:center;
+    flex-shrink:0;
+  }
+  .gallery-toggle-btn:hover{
+    background:var(--green-dim);
+    color:#fff;
+  }
 
   /* -------- menu list -------- */
   #menuList{
@@ -208,8 +228,12 @@
     position:relative;
     background:
       radial-gradient(ellipse at 50% 40%, #1c1c1c 0%, #0d0d0d 75%);
-    overflow:hidden;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:var(--green-dim) #141414;
   }
+  #main::-webkit-scrollbar{width:8px;}
+  #main::-webkit-scrollbar-thumb{background:var(--green-dim);}
 
   #waitingScreen{
     position:absolute;inset:0;
@@ -273,10 +297,138 @@
     background:#000;
   }
 
-  #closeContentBtn{
-    position:absolute;
+  /* ================= GALLERY SCREEN ================= */
+  #galleryScreen{
+    display:none;
+    padding:40px;
+    min-height: 100%;
+  }
+  
+  .gallery-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 30px;
+    border-bottom: 2px dashed var(--green-dim);
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+
+  .gallery-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 24px;
+    color: var(--gold);
+    text-shadow: 2px 2px 0 #000;
+  }
+
+  #galleryGrid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+  }
+
+  .gallery-card {
+    background: #0f1c16;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    position: relative;
+  }
+
+  .gallery-file-label {
+    background: var(--green-dim);
+    color: var(--gold);
+    font-size: 10px;
+    padding: 6px 0;
+    text-align: center;
+    border: 1px solid var(--green);
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+  }
+
+  .gallery-img-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border: 2px solid var(--green-dim);
+    margin-bottom: 15px;
+    cursor: pointer;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gallery-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s;
+  }
+
+  .gallery-img-wrap:hover img {
+    transform: scale(1.05);
+  }
+
+  .gallery-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .gallery-post-title {
+    font-family: 'Asta Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .gallery-post-title::before {
+    content: "■ ";
+    color: var(--gold);
+    font-size: 10px;
+    vertical-align: middle;
+  }
+
+  .gallery-date {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+    margin-top: auto;
+  }
+
+  .gallery-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+  }
+
+  .gallery-actions button {
+    flex: 1;
+    padding: 6px;
+    font-size: 9px;
+    background: transparent;
+    border: 1px solid var(--green-dim);
+    color: var(--text-dim);
+  }
+
+  .gallery-actions button:hover {
+    background: var(--green-dim);
+    color: var(--text);
+  }
+
+  /* ================= TOP RIGHT BUTTONS ================= */
+  .top-btn-group {
+    position:fixed;
     top:14px;right:18px;
     z-index:5;
+    display:flex;
+    gap:10px;
+  }
+
+  .top-btn {
     display:none;
     background:rgba(20,20,20,.85);
     border:2px solid var(--gold-dim);
@@ -287,35 +439,22 @@
     cursor:pointer;
     letter-spacing:1px;
   }
-  #closeContentBtn:hover{border-color:var(--gold);color:#fff;}
+  .top-btn:hover{border-color:var(--gold);color:#fff;}
+  .top-btn.green-btn { border-color:var(--green); color:var(--green-light); }
+  .top-btn.green-btn:hover { border-color:var(--green-light); color:#fff; }
 
-  #openNewTabBtn{
-    position:absolute;
-    top:14px;right:140px;
-    z-index:5;
-    display:none;
-    background:rgba(20,20,20,.85);
-    border:2px solid var(--green);
-    color:var(--green-light);
-    font-family:'Press Start 2P', monospace;
-    font-size:11px;
-    padding:8px 12px;
-    cursor:pointer;
-    letter-spacing:1px;
-    white-space:nowrap;
-  }
-  #openNewTabBtn:hover{border-color:var(--green-light);color:#fff;}
-
-  /* -------- 삭제 확인 모달 -------- */
-  .confirm-overlay{
+  /* ================= MODALS ================= */
+  .modal-overlay{
     position:fixed;inset:0;
-    background:rgba(0,0,0,.75);
+    background:rgba(0,0,0,.85);
     display:none;
     align-items:center;
     justify-content:center;
     z-index:10000;
   }
-  .confirm-overlay.show{display:flex;}
+  .modal-overlay.show{display:flex;}
+
+  /* Confirm Modal */
   .confirm-box{
     background:#0f1c16;
     padding:30px 34px;
@@ -341,12 +480,91 @@
     color:var(--gold);
     border:2px solid var(--green);
   }
+  
   button, .pixel-btn, .menu-item {
-  cursor: url('./cursor.png'), pointer !important;
-}
+    cursor: url('./cursor.png'), pointer !important;
+  }
   .confirm-actions .pixel-btn:hover{background:var(--green);color:#0e1a15;}
-  #confirmYes{border-color:var(--danger) !important;}
-  #confirmYes:hover{background:var(--danger) !important;color:#fff !important;}
+  .btn-danger{border-color:var(--danger) !important;}
+  .btn-danger:hover{background:var(--danger) !important;color:#fff !important;}
+
+  /* Gallery Form Modal */
+  .form-box {
+    position: relative;
+    background:#0f1c16;
+    padding:25px;
+    width: 400px;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .form-title {
+    font-family:'Press Start 2P', monospace;
+    color: var(--gold);
+    font-size: 14px;
+    margin: 0 0 10px 0;
+    text-align: center;
+  }
+
+  .form-box .field-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+
+  .form-box .field-label {
+    width: auto;
+  }
+  
+  .form-box input[type="file"] {
+    background: var(--green-dim);
+    color: var(--text);
+    font-family: 'Asta Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px;
+    border: 2px solid var(--green);
+  }
+
+  /* Image View Modal */
+  .img-view-box {
+    max-width: 90vw;
+    max-height: 90vh;
+    position: relative;
+  }
+  
+  .img-view-box img {
+    max-width: 100%;
+    max-height: 90vh;
+    border: 2px solid var(--gold);
+    display: block;
+  }
+  
+  .close-img-btn {
+    position: absolute;
+    top: -30px;
+    right: 0;
+    background: none;
+    border: none;
+    color: var(--gold);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 28, 22, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    z-index: 10;
+  }
 </style>
 </head>
 <body>
@@ -374,8 +592,11 @@
         <span class="field-label">LINK</span>
         <input class="field-input" id="menuLinkInput" placeholder="https://...">
       </div>
-      <button class="add-link-btn pixel-btn" id="addLinkBtn">+ ADD LINK</button>
+      <button class="action-btn pixel-btn" id="addLinkBtn">+ ADD LINK</button>
     </div>
+
+    <!-- 분리된 Save/Load 버튼 -->
+    <button class="gallery-toggle-btn pixel-btn rpg-box" id="galleryBtn">SAVE / LOAD</button>
 
     <ul id="menuList">
       <li class="empty-hint">🤷‍♀️ NO LINK</li>
@@ -385,8 +606,10 @@
 
   <!-- ================= MAIN ================= -->
   <main id="main">
-    <button id="closeContentBtn" class="pixel-btn">✕ CLOSE</button>
-    <button id="openNewTabBtn" class="pixel-btn">↗ NEW TAP</button>
+    <div class="top-btn-group">
+      <button id="openNewTabBtn" class="top-btn green-btn pixel-btn">↗ NEW TAB</button>
+      <button id="closeContentBtn" class="top-btn pixel-btn">✕ CLOSE</button>
+    </div>
 
     <div id="waitingScreen">
       <div class="logo-big">KasiS</div>
@@ -397,24 +620,71 @@
     </div>
 
     <iframe id="contentFrame"></iframe>
+
+    <!-- 갤러리 스크린 -->
+    <div id="galleryScreen">
+      <div class="gallery-header">
+        <div class="gallery-title">GAME DATA</div>
+        <button id="openWriteModalBtn" class="action-btn pixel-btn" style="width:auto; padding: 10px 20px;">+ SAVE</button>
+      </div>
+      <div id="galleryGrid">
+        <!-- 갤러리 아이템 렌더링 영역 -->
+      </div>
+    </div>
   </main>
 
   <!-- ================= 삭제 확인 모달 ================= -->
-  <div id="confirmOverlay" class="confirm-overlay">
+  <div id="confirmOverlay" class="modal-overlay">
     <div class="confirm-box rpg-box">
       <p class="confirm-text">정말로<br>삭제하시겠습니까?</p>
       <div class="confirm-actions">
-        <button id="confirmYes" class="pixel-btn">예</button>
+        <button id="confirmYes" class="pixel-btn btn-danger">예</button>
         <button id="confirmNo" class="pixel-btn">아니오</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= 갤러리 작성/수정 모달 ================= -->
+  <div id="galleryFormOverlay" class="modal-overlay">
+    <div class="form-box rpg-box">
+      <div id="formLoading" class="loading-overlay">SAVING...</div>
+      <h3 class="form-title" id="formTitle">NEW DATA</h3>
+      <input type="hidden" id="galleryEditId">
+      
+      <div class="field-row">
+        <span class="field-label">TITLE</span>
+        <input class="field-input" id="galleryTitleInput" placeholder="시나리오명" maxlength="30">
+      </div>
+      
+      <div class="field-row">
+        <span class="field-label">DATE</span>
+        <input class="field-input" id="galleryDateInput" placeholder="20XX-XX-XX">
+      </div>
+      
+      <div class="field-row">
+        <span class="field-label">CARD</span>
+        <input type="file" id="galleryImageInput" accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
+        <span style="font-size:9px; color:var(--text-dim); margin-top:4px;">* 모든 이미지는 webp로 자동 변환되어 저장됩니다.</span>
+      </div>
+
+      <div class="confirm-actions" style="margin-top: 15px;">
+        <button id="gallerySaveBtn" class="pixel-btn">SAVE</button>
+        <button id="galleryCancelBtn" class="pixel-btn btn-danger">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 이미지 원본 뷰어 모달 ================= -->
+  <div id="imageViewOverlay" class="modal-overlay">
+    <div class="img-view-box">
+      <button class="close-img-btn" id="closeImageViewBtn">✕</button>
+      <img id="fullSizeImage" src="" alt="Full size">
     </div>
   </div>
 
 <script>
 /* =====================================================================
    Firebase 설정
-   → https://console.firebase.google.com 에서 프로젝트 생성 후
-     '웹 앱 추가'로 발급받은 config 값을 아래에 그대로 붙여넣으세요.
    ===================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyDdwSkHiw0l9XsRSOrf6_1r0Izitb7PV9U",
@@ -428,22 +698,22 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const storage = firebase.storage();
 const menuCollection = db.collection("menuItems");
+const galleryCollection = db.collection("galleryItems");
 
 /* =====================================================================
-   메뉴 목록 (실시간 동기화 — 누구든 추가/삭제하면 모든 접속자에게 반영)
+   메뉴 목록 (Links)
    ===================================================================== */
 const menuListEl = document.getElementById("menuList");
 let activeId = null;
 
 menuCollection.orderBy("createdAt", "asc").onSnapshot(snapshot => {
   menuListEl.innerHTML = "";
-
   if (snapshot.empty) {
     menuListEl.innerHTML = `<li class="empty-hint">🤷‍♀️ NO LINK</li>`;
     return;
   }
-
   snapshot.forEach(doc => {
     const data = doc.data();
     const li = document.createElement("li");
@@ -451,58 +721,29 @@ menuCollection.orderBy("createdAt", "asc").onSnapshot(snapshot => {
     li.innerHTML = `<span class="x-btn">✕</span><span class="m-name"></span>`;
     li.querySelector(".m-name").textContent = data.name;
 
-    // 좌클릭 → 우측 화면에 링크 출력
     li.addEventListener("click", (e) => {
       if (e.target.classList.contains("x-btn")) return;
       openLink(doc.id, data.link);
     });
 
-    // X 아이콘 클릭 → 삭제 확인창
     li.querySelector(".x-btn").addEventListener("click", (e) => {
       e.stopPropagation();
-      requestDelete(doc.id);
+      requestDelete('menu', doc.id);
     });
-
-    // 우클릭 → 삭제 확인창
     li.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      requestDelete(doc.id);
+      requestDelete('menu', doc.id);
     });
 
     menuListEl.appendChild(li);
   });
 }, err => {
-  menuListEl.innerHTML = `<li class="empty-hint">Firebase 연결 오류 — config 확인 필요</li>`;
   console.error(err);
 });
 
-/* -------- 삭제 확인 모달 -------- */
-const confirmOverlay = document.getElementById("confirmOverlay");
-let pendingDeleteId = null;
-
-function requestDelete(id){
-  pendingDeleteId = id;
-  confirmOverlay.classList.add("show");
-}
-
-document.getElementById("confirmYes").addEventListener("click", () => {
-  if (pendingDeleteId) {
-    menuCollection.doc(pendingDeleteId).delete().catch(console.error);
-    if (pendingDeleteId === activeId) closeContent();
-  }
-  pendingDeleteId = null;
-  confirmOverlay.classList.remove("show");
-});
-
-document.getElementById("confirmNo").addEventListener("click", () => {
-  pendingDeleteId = null;
-  confirmOverlay.classList.remove("show");
-});
-
-/* -------- 메뉴 추가 -------- */
+/* -------- 링크 추가 -------- */
 const menuNameInput = document.getElementById("menuNameInput");
 const menuLinkInput = document.getElementById("menuLinkInput");
-
 document.getElementById("addLinkBtn").addEventListener("click", async () => {
   const name = menuNameInput.value.trim();
   let link = menuLinkInput.value.trim();
@@ -510,58 +751,267 @@ document.getElementById("addLinkBtn").addEventListener("click", async () => {
   if (!/^https?:\/\//i.test(link)) link = "https://" + link;
 
   await menuCollection.add({
-    name,
-    link,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    name, link, createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
-
   menuNameInput.value = "";
   menuLinkInput.value = "";
 });
 
-/* -------- 우측 콘텐츠 영역 전환 -------- */
+/* =====================================================================
+   공통 삭제 모달 로직
+   ===================================================================== */
+const confirmOverlay = document.getElementById("confirmOverlay");
+let deleteTarget = { type: null, id: null, extra: null }; 
+
+function requestDelete(type, id, extra = null){
+  deleteTarget = { type, id, extra };
+  confirmOverlay.classList.add("show");
+}
+
+document.getElementById("confirmYes").addEventListener("click", async () => {
+  if (deleteTarget.type === 'menu') {
+    menuCollection.doc(deleteTarget.id).delete().catch(console.error);
+    if (deleteTarget.id === activeId) closeContent();
+  } else if (deleteTarget.type === 'gallery') {
+    try {
+      if (deleteTarget.extra) {
+        const fileRef = storage.refFromURL(deleteTarget.extra);
+        await fileRef.delete().catch(() => {});
+      }
+      await galleryCollection.doc(deleteTarget.id).delete();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  
+  deleteTarget = { type: null, id: null, extra: null };
+  confirmOverlay.classList.remove("show");
+});
+
+document.getElementById("confirmNo").addEventListener("click", () => {
+  deleteTarget = { type: null, id: null, extra: null };
+  confirmOverlay.classList.remove("show");
+});
+
+/* =====================================================================
+   화면 전환 로직 (Waiting / Iframe / Gallery)
+   ===================================================================== */
 const waitingScreen = document.getElementById("waitingScreen");
 const contentFrame = document.getElementById("contentFrame");
+const galleryScreen = document.getElementById("galleryScreen");
 const closeContentBtn = document.getElementById("closeContentBtn");
 const openNewTabBtn = document.getElementById("openNewTabBtn");
 let currentLinkUrl = "";
+
+function hideAllScreens() {
+  waitingScreen.style.display = "none";
+  contentFrame.style.display = "none";
+  galleryScreen.style.display = "none";
+  closeContentBtn.style.display = "none";
+  openNewTabBtn.style.display = "none";
+}
 
 function openLink(id, url){
   activeId = id;
   currentLinkUrl = url;
   document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
   contentFrame.src = url;
-  waitingScreen.style.display = "none";
+  
+  hideAllScreens();
   contentFrame.style.display = "block";
   closeContentBtn.style.display = "block";
   openNewTabBtn.style.display = "block";
-  // 활성 표시 갱신을 위해 목록 재렌더는 다음 스냅샷에서 자동 반영됨
+}
+
+function openGallery() {
+  activeId = null;
+  currentLinkUrl = "";
+  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
+  contentFrame.src = "about:blank";
+  
+  hideAllScreens();
+  galleryScreen.style.display = "block";
+  closeContentBtn.style.display = "block"; 
 }
 
 function closeContent(){
   activeId = null;
   currentLinkUrl = "";
   contentFrame.src = "about:blank";
-  contentFrame.style.display = "none";
+  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
+  
+  hideAllScreens();
   waitingScreen.style.display = "flex";
-  closeContentBtn.style.display = "none";
-  openNewTabBtn.style.display = "none";
 }
 
+document.getElementById("galleryBtn").addEventListener("click", openGallery);
 closeContentBtn.addEventListener("click", closeContent);
 openNewTabBtn.addEventListener("click", () => {
   if (currentLinkUrl) window.open(currentLinkUrl, "_blank", "noopener,noreferrer");
 });
 
 /* =====================================================================
-   유튜브 배경 음악 재생 / 정지 (반복재생)
-   → 아래 YOUTUBE_VIDEO_ID를 원하는 영상의 ID로 교체하세요.
+   갤러리 구현 (WebP 변환 및 CRUD)
+   ===================================================================== */
+const galleryGrid = document.getElementById("galleryGrid");
+const galleryFormOverlay = document.getElementById("galleryFormOverlay");
+const openWriteModalBtn = document.getElementById("openWriteModalBtn");
+const gallerySaveBtn = document.getElementById("gallerySaveBtn");
+const galleryCancelBtn = document.getElementById("galleryCancelBtn");
+const formLoading = document.getElementById("formLoading");
+
+const galleryEditId = document.getElementById("galleryEditId");
+const galleryTitleInput = document.getElementById("galleryTitleInput");
+const galleryDateInput = document.getElementById("galleryDateInput");
+const galleryImageInput = document.getElementById("galleryImageInput");
+const formTitle = document.getElementById("formTitle");
+
+let currentGalleryData = [];
+
+function convertToWebP(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("WebP 변환에 실패했습니다. 브라우저가 WebP 인코딩을 지원하지 않을 수 있습니다."));
+        }, 'image/webp', 0.8);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+galleryCollection.orderBy("createdAt", "asc").onSnapshot(snapshot => {
+  galleryGrid.innerHTML = "";
+  currentGalleryData = [];
+  let index = 1;
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    currentGalleryData.push({ id: doc.id, ...data });
+
+    const card = document.createElement("div");
+    card.className = "gallery-card rpg-box";
+    card.innerHTML = `
+      <div class="gallery-file-label">File ${index}</div>
+      <div class="gallery-img-wrap">
+        <img src="${data.imageUrl}" alt="thumbnail" data-src="${data.imageUrl}">
+      </div>
+      <div class="gallery-info">
+        <div class="gallery-post-title">${data.title}</div>
+        <div class="gallery-date">${data.date}</div>
+      </div>
+      <div class="gallery-actions">
+        <button class="pixel-btn edit-btn">EDIT</button>
+        <button class="pixel-btn del-btn">DEL</button>
+      </div>
+    `;
+
+    card.querySelector(".gallery-img-wrap").addEventListener("click", () => {
+      document.getElementById("fullSizeImage").src = data.imageUrl;
+      document.getElementById("imageViewOverlay").classList.add("show");
+    });
+
+    card.querySelector(".edit-btn").addEventListener("click", () => {
+      galleryEditId.value = doc.id;
+      galleryTitleInput.value = data.title;
+      galleryDateInput.value = data.date;
+      galleryImageInput.value = "";
+      formTitle.textContent = "EDIT DATA";
+      galleryFormOverlay.classList.add("show");
+    });
+
+    card.querySelector(".del-btn").addEventListener("click", () => {
+      requestDelete('gallery', doc.id, data.imageUrl);
+    });
+
+    galleryGrid.appendChild(card);
+    index++;
+  });
+}, err => console.error("Gallery Sync Error: ", err));
+
+openWriteModalBtn.addEventListener("click", () => {
+  galleryEditId.value = "";
+  galleryTitleInput.value = "";
+  galleryDateInput.value = "";
+  galleryImageInput.value = "";
+  formTitle.textContent = "NEW DATA";
+  galleryFormOverlay.classList.add("show");
+});
+
+galleryCancelBtn.addEventListener("click", () => {
+  galleryFormOverlay.classList.remove("show");
+});
+
+document.getElementById("closeImageViewBtn").addEventListener("click", () => {
+  document.getElementById("imageViewOverlay").classList.remove("show");
+});
+document.getElementById("imageViewOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "imageViewOverlay") {
+    e.target.classList.remove("show");
+  }
+});
+
+gallerySaveBtn.addEventListener("click", async () => {
+  const id = galleryEditId.value;
+  const title = galleryTitleInput.value.trim();
+  const date = galleryDateInput.value.trim();
+  const file = galleryImageInput.files[0];
+
+  if (!title || !date) return alert("제목과 날짜를 입력하십시오.");
+  if (!id && !file) return alert("이미지를 첨부하십시오.");
+
+  formLoading.style.display = "flex";
+
+  try {
+    let imageUrl = null;
+    
+    if (file) {
+      const webpBlob = await convertToWebP(file);
+      const filename = `gallery_${Date.now()}.webp`;
+      const storageRef = storage.ref().child('gallery/' + filename);
+      await storageRef.put(webpBlob);
+      imageUrl = await storageRef.getDownloadURL();
+    }
+
+    if (id) {
+      const updateData = { title, date };
+      if (imageUrl) updateData.imageUrl = imageUrl;
+      await galleryCollection.doc(id).update(updateData);
+    } else {
+      await galleryCollection.add({
+        title, date, imageUrl,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    galleryFormOverlay.classList.remove("show");
+  } catch (error) {
+    console.error("Upload failed: ", error);
+    alert("오류가 발생했습니다.\n[" + (error && (error.code || error.name) || "unknown") + "] " + (error && error.message ? error.message : error));
+  } finally {
+    formLoading.style.display = "none";
+  }
+});
+
+/* =====================================================================
+   유튜브 배경 음악 재생
    ===================================================================== */
 const YOUTUBE_VIDEO_ID = "LvytTVeTxCE";
-
 let ytPlayer = null;
 let ytReady = false;
-let pendingPlay = false; // API 로딩 전에 재생 버튼을 눌렀을 때를 대비한 대기열
+let pendingPlay = false; 
 
 const tag = document.createElement("script");
 tag.src = "https://www.youtube.com/iframe_api";
@@ -569,35 +1019,19 @@ document.head.appendChild(tag);
 
 window.onYouTubeIframeAPIReady = function(){
   ytPlayer = new YT.Player("ytHost", {
-    height: "1",
-    width: "1",
-    videoId: "CQr4QSRhYyI",
+    height: "1", width: "1", videoId: "CQr4QSRhYyI",
     playerVars: { autoplay: 0, controls: 0 },
     events: {
       onReady: () => {
         ytReady = true;
         ytPlayer.unMute();
         ytPlayer.setVolume(100);
-        if (pendingPlay) {
-          ytPlayer.playVideo();
-          pendingPlay = false;
-        }
+        if (pendingPlay) { ytPlayer.playVideo(); pendingPlay = false; }
       },
       onStateChange: (e) => {
         if (e.data === YT.PlayerState.ENDED) {
-          ytPlayer.seekTo(0);
-          ytPlayer.playVideo();
+          ytPlayer.seekTo(0); ytPlayer.playVideo();
         }
-      },
-      onError: (e) => {
-        const reasons = {
-          2: "영상 ID가 잘못됐습니다 (YOUTUBE_VIDEO_ID 확인)",
-          5: "HTML5 플레이어 오류",
-          100: "삭제되었거나 비공개 처리된 영상입니다",
-          101: "이 영상은 외부 사이트(임베드) 재생이 금지되어 있습니다",
-          150: "이 영상은 외부 사이트(임베드) 재생이 금지되어 있습니다"
-        };
-        console.error("[KASIS] 유튜브 재생 실패:", reasons[e.data] || ("알 수 없는 오류 코드 " + e.data));
       }
     }
   });
@@ -607,26 +1041,15 @@ const playBtn = document.getElementById("playBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 
 playBtn.addEventListener("click", () => {
-  playBtn.classList.add("active");
-  pauseBtn.classList.remove("active");
-
-  if (!ytReady) {
-    // API가 아직 로딩 중이면, 로딩 완료 후 자동 재생되도록 예약만 해둠
-    pendingPlay = true;
-    return;
-  }
-  ytPlayer.unMute();
-  ytPlayer.setVolume(100);
-  ytPlayer.playVideo();
+  playBtn.classList.add("active"); pauseBtn.classList.remove("active");
+  if (!ytReady) { pendingPlay = true; return; }
+  ytPlayer.unMute(); ytPlayer.setVolume(100); ytPlayer.playVideo();
 });
 pauseBtn.addEventListener("click", () => {
   pendingPlay = false;
-  pauseBtn.classList.add("active");
-  playBtn.classList.remove("active");
-  if (!ytReady) return;
-  ytPlayer.pauseVideo();
+  pauseBtn.classList.add("active"); playBtn.classList.remove("active");
+  if (!ytReady) return; ytPlayer.pauseVideo();
 });
 </script>
-
 </body>
 </html>
