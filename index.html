@@ -235,6 +235,38 @@
   #main::-webkit-scrollbar{width:8px;}
   #main::-webkit-scrollbar-thumb{background:var(--green-dim);}
 
+  /* -------- 떠다니는 먼지 파티클 -------- */
+  #dustLayer{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    overflow:hidden;
+    pointer-events:none;
+  }
+  .dust-mote{
+    position:absolute;
+    left:var(--x);
+    top:var(--y);
+    width:var(--size);
+    height:var(--size);
+    border-radius:50%;
+    background:var(--c);
+    box-shadow:0 0 6px 1px var(--c);
+    opacity:0;
+    animation:dust-float var(--dur) ease-in-out var(--delay) infinite;
+    will-change:transform,opacity;
+  }
+  @keyframes dust-float{
+    0%   { transform:translate3d(0,0,0); opacity:0; }
+    15%  { opacity:var(--op); }
+    50%  { transform:translate3d(var(--dx),var(--dy),0); opacity:calc(var(--op) * .6); }
+    85%  { opacity:var(--op); }
+    100% { transform:translate3d(0,0,0); opacity:0; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .dust-mote{display:none;}
+  }
+
   #waitingScreen{
     position:absolute;inset:0;
     display:flex;
@@ -606,6 +638,7 @@
 
   <!-- ================= MAIN ================= -->
   <main id="main">
+    <div id="dustLayer"></div>
     <div class="top-btn-group">
       <button id="openNewTabBtn" class="top-btn green-btn pixel-btn">↗ NEW TAB</button>
       <button id="closeContentBtn" class="top-btn pixel-btn">✕ CLOSE</button>
@@ -1050,6 +1083,46 @@ pauseBtn.addEventListener("click", () => {
   pauseBtn.classList.add("active"); playBtn.classList.remove("active");
   if (!ytReady) return; ytPlayer.pauseVideo();
 });
+/* =====================================================================
+   떠다니는 먼지 파티클 생성
+   ===================================================================== */
+(function initDust(){
+  const layer = document.getElementById("dustLayer");
+  if (!layer) return;
+
+  const colors = ["#c8a24a", "#a9d3bf", "#e7e7df"]; // gold, green-light, text
+  const COUNT = 60;
+  const frag = document.createDocumentFragment();
+
+  for (let i = 0; i < COUNT; i++) {
+    const mote = document.createElement("div");
+    mote.className = "dust-mote";
+
+    const size = (Math.random() * 2.5 + 1).toFixed(1) + "px";
+    const x = Math.random() * 100 + "%";
+    const y = Math.random() * 100 + "%";
+    const dx = (Math.random() * 160 - 80).toFixed(0) + "px";
+    const dy = (Math.random() * 160 - 80).toFixed(0) + "px";
+    const dur = (Math.random() * 10 + 8).toFixed(1) + "s";
+    const delay = (Math.random() * -18).toFixed(1) + "s";
+    const op = (Math.random() * 0.35 + 0.25).toFixed(2);
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    mote.style.setProperty("--size", size);
+    mote.style.setProperty("--x", x);
+    mote.style.setProperty("--y", y);
+    mote.style.setProperty("--dx", dx);
+    mote.style.setProperty("--dy", dy);
+    mote.style.setProperty("--dur", dur);
+    mote.style.setProperty("--delay", delay);
+    mote.style.setProperty("--op", op);
+    mote.style.setProperty("--c", color);
+
+    frag.appendChild(mote);
+  }
+
+  layer.appendChild(frag);
+})();
 </script>
 </body>
 </html>
