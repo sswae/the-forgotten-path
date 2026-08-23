@@ -202,6 +202,22 @@
   }
   .menu-item:hover{color:var(--text);background:rgba(79,138,109,.15);}
   .menu-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(200,162,74,.08);}
+  .menu-item.dragging{
+    opacity:.35;
+    background:rgba(200,162,74,.12);
+  }
+  .menu-item.drag-over-top{border-top:2px solid var(--gold);}
+  .menu-item.drag-over-bottom{border-bottom:2px solid var(--gold);}
+  .menu-item .drag-handle{
+    color:var(--text-dim);
+    flex-shrink:0;
+    font-size:12px;
+    margin-top:2px;
+    opacity:.4;
+    cursor:grab;
+  }
+  .menu-item:hover .drag-handle{opacity:.9;}
+  .menu-item .drag-handle:active{cursor:grabbing;}
   .menu-item .x-btn{
     color:var(--danger);
     flex-shrink:0;
@@ -740,38 +756,106 @@ const galleryCollection = db.collection("galleryItems");
    ===================================================================== */
 const menuListEl = document.getElementById("menuList");
 let activeId = null;
+let currentMenuData = [];
 
 menuCollection.orderBy("createdAt", "asc").onSnapshot(snapshot => {
   menuListEl.innerHTML = "";
+  currentMenuData = [];
   if (snapshot.empty) {
     menuListEl.innerHTML = `<li class="empty-hint">🤷‍♀️ NO LINK</li>`;
     return;
   }
   snapshot.forEach(doc => {
     const data = doc.data();
+    currentMenuData.push({ id: doc.id, ...data });
+  });
+
+  // order 필드가 있으면 그 값으로, 없으면(기존 데이터) 원래 순서(createdAt asc) 그대로 뒤에 붙도록 정렬
+  currentMenuData.sort((a, b) => {
+    const ao = (a.order !== undefined) ? a.order : Infinity;
+    const bo = (b.order !== undefined) ? b.order : Infinity;
+    return ao - bo;
+  });
+
+  currentMenuData.forEach(data => {
     const li = document.createElement("li");
-    li.className = "menu-item" + (doc.id === activeId ? " active" : "");
-    li.innerHTML = `<span class="x-btn">✕</span><span class="m-name"></span>`;
+    li.className = "menu-item" + (data.id === activeId ? " active" : "");
+    li.draggable = true;
+    li.dataset.id = data.id;
+    li.innerHTML = `<span class="drag-handle">⠿</span><span class="x-btn">✕</span><span class="m-name"></span>`;
     li.querySelector(".m-name").textContent = data.name;
 
     li.addEventListener("click", (e) => {
-      if (e.target.classList.contains("x-btn")) return;
-      openLink(doc.id, data.link);
+      if (e.target.classList.contains("x-btn") || e.target.classList.contains("drag-handle")) return;
+      openLink(data.id, data.link);
     });
 
     li.querySelector(".x-btn").addEventListener("click", (e) => {
       e.stopPropagation();
-      requestDelete('menu', doc.id);
+      requestDelete('menu', data.id);
     });
     li.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      requestDelete('menu', doc.id);
+      requestDelete('menu', data.id);
+    });
+
+    li.addEventListener("dragstart", (e) => {
+      li.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", data.id);
+    });
+    li.addEventListener("dragend", () => {
+      li.classList.remove("dragging");
+      menuListEl.querySelectorAll(".menu-item").forEach(el => {
+        el.classList.remove("drag-over-top", "drag-over-bottom");
+      });
     });
 
     menuListEl.appendChild(li);
   });
 }, err => {
   console.error(err);
+});
+
+/* -------- 드래그로 순서 변경 -------- */
+menuListEl.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  const dragging = menuListEl.querySelector(".dragging");
+  if (!dragging) return;
+
+  const target = e.target.closest(".menu-item");
+  menuListEl.querySelectorAll(".menu-item").forEach(el => {
+    el.classList.remove("drag-over-top", "drag-over-bottom");
+  });
+  if (!target || target === dragging) return;
+
+  const box = target.getBoundingClientRect();
+  const isAfter = e.clientY - box.top > box.height / 2;
+  target.classList.add(isAfter ? "drag-over-bottom" : "drag-over-top");
+
+  if (isAfter) {
+    target.after(dragging);
+  } else {
+    target.before(dragging);
+  }
+});
+
+menuListEl.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  menuListEl.querySelectorAll(".menu-item").forEach(el => {
+    el.classList.remove("drag-over-top", "drag-over-bottom");
+  });
+
+  const items = [...menuListEl.querySelectorAll(".menu-item")];
+  const batch = db.batch();
+  items.forEach((li, idx) => {
+    batch.update(menuCollection.doc(li.dataset.id), { order: idx });
+  });
+  try {
+    await batch.commit();
+  } catch (err) {
+    console.error("순서 저장 실패:", err);
+  }
 });
 
 /* -------- 링크 추가 -------- */
