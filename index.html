@@ -155,6 +155,12 @@
   .action-btn:hover{background:var(--green);color:#0e1a15;}
 
   /* -------- standalone gallery toggle -------- */
+  .nav-btn-group{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    flex-shrink:0;
+  }
   .gallery-toggle-btn{
     background:#0f1c16;
     color:var(--gold);
@@ -202,22 +208,6 @@
   }
   .menu-item:hover{color:var(--text);background:rgba(79,138,109,.15);}
   .menu-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(200,162,74,.08);}
-  .menu-item.dragging{
-    opacity:.35;
-    background:rgba(200,162,74,.12);
-  }
-  .menu-item.drag-over-top{border-top:2px solid var(--gold);}
-  .menu-item.drag-over-bottom{border-bottom:2px solid var(--gold);}
-  .menu-item .drag-handle{
-    color:var(--text-dim);
-    flex-shrink:0;
-    font-size:12px;
-    margin-top:2px;
-    opacity:.4;
-    cursor:grab;
-  }
-  .menu-item:hover .drag-handle{opacity:.9;}
-  .menu-item .drag-handle:active{cursor:grabbing;}
   .menu-item .x-btn{
     color:var(--danger);
     flex-shrink:0;
@@ -467,6 +457,310 @@
     color: var(--text);
   }
 
+  /* ================= CHARACTER LIST SCREEN ================= */
+  #characterListScreen{
+    display:none;
+    padding:40px;
+    min-height:100%;
+  }
+  .char-list-title{ font-size:24px; }
+
+  #characterGrid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+  }
+
+  .character-card{
+    background:#0f1c16;
+    display:flex;
+    flex-direction:column;
+    padding:15px;
+    position:relative;
+  }
+  .character-file-label{
+    background:var(--green-dim);
+    color:var(--gold);
+    font-size:11px;
+    padding:8px 0;
+    text-align:center;
+    border:1px solid var(--green);
+    margin-bottom:15px;
+    letter-spacing:1px;
+    font-family:'Press Start 2P', monospace;
+  }
+  .character-img-wrap{
+    width:100%;
+    aspect-ratio:3/4;
+    overflow:hidden;
+    border:2px solid var(--green-dim);
+    margin-bottom:15px;
+    cursor:pointer;
+    background:#000;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .character-img-wrap img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    transition:transform .2s;
+  }
+  .character-img-wrap:hover img{transform:scale(1.05);}
+
+  /* ================= CHARACTER DETAIL SCREEN (캐릭터 시트) ================= */
+  #characterDetailScreen{
+    display:none;
+    padding:60px 40px;
+    min-height:100%;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .char-sheet{
+    position:relative;
+    width:700px;
+    max-width:100%;
+    min-height:400px;
+    background:linear-gradient(180deg,var(--sidebar-bg-top),var(--sidebar-bg-bottom));
+    padding:34px 26px 26px 110px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    margin-top:30px;
+  }
+
+  /* -------- 왼쪽 상단에 겹쳐지는 펜던트(시계추처럼 흔들림) -------- */
+  .char-pendant{
+    position:absolute;
+    top:-34px;
+    left:-50px;
+    width:130px;
+    height:290px;
+    background:linear-gradient(180deg,var(--sidebar-bg-top),var(--sidebar-bg-bottom));
+    border:1px solid var(--green);
+    border-radius:65px;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:16px 8px 14px;
+    gap:6px;
+    transform-origin:top center;
+    animation:pendant-swing 4.5s ease-in-out infinite;
+    box-shadow:0 6px 14px rgba(0,0,0,.5);
+  }
+  @keyframes pendant-swing{
+    0%,100%{ transform:rotate(-4deg); }
+    50%{ transform:rotate(4deg); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .char-pendant{ animation:none; }
+  }
+  .char-pendant-star{ color:var(--gold); font-size:40px; }
+  .char-pendant-emoji{ font-size:60px; margin-top:4px; }
+  .char-pendant-class{
+    font-family:'Press Start 2P', monospace;
+    font-size:9px;
+    color:var(--text-dim);
+    text-align:center;
+    line-height:1.5;
+    word-break:break-word;
+  }
+  .char-pendant-divider{
+    width:80%;
+    height:1px;
+    background:var(--green);
+    margin:10px 0;
+  }
+  .char-pendant-level{
+    font-family:'Press Start 2P', monospace;
+    font-size:30px;
+    color:var(--gold);
+  }
+  .char-pendant-level-label{
+    font-family:'Press Start 2P', monospace;
+    font-size:9px;
+    color:var(--text-dim);
+    letter-spacing:1px;
+  }
+
+  .char-sheet-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .char-sheet-names{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .char-name-kr{
+    font-family:'Asta Sans', sans-serif;
+    font-weight:800;
+    font-size:26px;
+    color:var(--gold);
+    animation:name-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes name-glow{
+    0%,100%{ text-shadow:0 0 6px rgba(200,162,74,.35); }
+    50%{ text-shadow:0 0 18px rgba(245, 212, 137, 0.9), 0 0 30px rgba(200,162,74,.4); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .char-name-kr{ animation:none; text-shadow:0 0 10px rgba(200,162,74,.5); }
+  }
+  .char-name-en{
+    font-family:'Press Start 2P', monospace;
+    font-size:11px;
+    color:var(--green-dim);
+  }
+  .char-stats{
+    font-family:'Press Start 2P', monospace;
+    font-size:10px;
+    color:var(--text-dim);
+    white-space:nowrap;
+  }
+
+  .char-mission-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .char-mission-tag{
+    font-family:'Press Start 2P', monospace;
+    font-size:9px;
+    background:var(--gold-dim);
+    color:#12100a;
+    padding:5px 8px;
+    letter-spacing:1px;
+    flex-shrink:0;
+  }
+  .char-mission-text{
+    font-family:'Asta Sans', sans-serif;
+    font-size:13px;
+    color:var(--text);
+    word-break:break-word;
+  }
+
+  .char-sheet-body{
+    display:flex;
+    gap:16px;
+    flex:1;
+    min-height:0;
+  }
+  .char-portrait-wrap{
+    width:150px;
+    flex-shrink:0;
+    display:flex;
+    align-items:flex-start;
+    margin-top: 20px;
+  }
+  .char-portrait-wrap img{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+
+  .char-items-box{
+    flex:1;
+    min-width:0;
+    border:2px solid var(--green-dim);
+    background:rgba(0,0,0,.2);
+    padding:12px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    scrollbar-width:thin;
+    scrollbar-color:var(--green-dim) transparent;
+  }
+  .char-items-box::-webkit-scrollbar{ width:6px; }
+  .char-items-box::-webkit-scrollbar-thumb{ background:var(--green-dim); }
+  .char-item-name{
+    font-family:'Asta Sans', sans-serif;
+    font-weight:800;
+    font-size:13px;
+    color:var(--text);
+    margin-bottom:4px;
+  }
+  .char-item-content{
+    font-family:'Asta Sans', sans-serif;
+    font-size:12px;
+    line-height:1.6;
+    color:var(--text-dim);
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+
+  .char-detail-actions{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+  }
+
+  /* 버튼 자체의 생김새를 다듬는 구역 */
+  .char-detail-actions button {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: var(--gold); 
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--green-dim);
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  /* 시선(마우스)이 닿았을 때 일어나는 변화 */
+  .char-detail-actions button:hover {
+    background-color: var(--green-dim);
+    color: #12100a;
+  }
+
+  /* -------- 캐릭터 작성 폼 -------- */
+  .char-form-box{
+    width:460px;
+    max-height:88vh;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:var(--green-dim) transparent;
+  }
+  .char-form-2col{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .char-items-form-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:6px;
+  }
+  .char-item-form-row{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    border:1px solid var(--green-dim);
+    padding:10px;
+    margin-top:8px;
+    position:relative;
+  }
+  .char-item-form-row .field-input{ font-size:11px; }
+  .char-item-form-row textarea.field-input{
+    resize:vertical;
+    min-height:56px;
+    font-family:'Asta Sans', sans-serif;
+  }
+  .char-item-remove-btn{
+    align-self:flex-end;
+    background:transparent;
+    border:1px solid var(--danger);
+    color:var(--danger);
+    font-family:'Press Start 2P', monospace;
+    font-size:9px;
+    padding:4px 8px;
+    cursor:pointer;
+  }
+  .char-item-remove-btn:hover{ background:var(--danger); color:#fff; }
+
   /* ================= TOP RIGHT BUTTONS ================= */
   .top-btn-group {
     position:fixed;
@@ -644,7 +938,10 @@
     </div>
 
     <!-- 분리된 Save/Load 버튼 -->
-    <button class="gallery-toggle-btn pixel-btn rpg-box" id="galleryBtn">SAVE / LOAD</button>
+    <div class="nav-btn-group">
+      <button class="gallery-toggle-btn pixel-btn rpg-box" id="galleryBtn">SAVE / LOAD</button>
+      <button class="gallery-toggle-btn pixel-btn rpg-box" id="characterBtn">CHARACTER</button>
+    </div>
 
     <ul id="menuList">
       <li class="empty-hint">🤷‍♀️ NO LINK</li>
@@ -678,6 +975,59 @@
       </div>
       <div id="galleryGrid">
         <!-- 갤러리 아이템 렌더링 영역 -->
+      </div>
+    </div>
+
+    <!-- 캐릭터 리스트 스크린 -->
+    <div id="characterListScreen">
+      <div class="gallery-header">
+        <div class="gallery-title char-list-title">WHO ARE YOU?</div>
+        <button id="openCharWriteBtn" class="action-btn pixel-btn" style="width:auto; padding: 10px 20px;">+ ADD CHARACTER</button>
+      </div>
+      <div id="characterGrid">
+        <!-- 캐릭터 카드 렌더링 영역 -->
+      </div>
+    </div>
+
+    <!-- 캐릭터 상세 스크린 -->
+    <div id="characterDetailScreen">
+      <div class="char-sheet rpg-box">
+        <div class="char-pendant">
+          <div class="char-pendant-star">✷</div>
+          <div class="char-pendant-emoji" id="charDetailEmoji">🗡️</div>
+          <div class="char-pendant-class" id="charDetailClass">Chara Class</div>
+          <div class="char-pendant-divider"></div>
+          <div class="char-pendant-level" id="charDetailLevel">1</div>
+          <div class="char-pendant-level-label">Level</div>
+        </div>
+
+        <div class="char-sheet-head">
+          <div class="char-sheet-names">
+            <div class="char-name-kr" id="charDetailNameKr">캐릭터명</div>
+            <div class="char-name-en" id="charDetailNameEn">Charaname</div>
+          </div>
+          <div class="char-stats" id="charDetailStats">000cm 00kg</div>
+        </div>
+
+        <div class="char-mission-row">
+          <span class="char-mission-tag">mission</span>
+          <span class="char-mission-text" id="charDetailMission">Lorem ipsum</span>
+        </div>
+
+        <div class="char-sheet-body">
+          <div class="char-portrait-wrap">
+            <img id="charDetailImg" src="" alt="character">
+          </div>
+          <div class="char-items-box" id="charDetailItems">
+            <!-- 커스텀 항목 렌더링 영역 -->
+          </div>
+        </div>
+      </div>
+
+      <div class="char-detail-actions">
+        <button id="charDetailEditBtn" class="pixel-btn">EDIT</button>
+        <button id="charDetailDelBtn" class="pixel-btn btn-danger">DEL</button>
+        <button id="charDetailCloseBtn" class="pixel-btn">✕ BACK</button>
       </div>
     </div>
   </main>
@@ -731,6 +1081,75 @@
     </div>
   </div>
 
+  <!-- ================= 캐릭터 작성/수정 모달 ================= -->
+  <div id="characterFormOverlay" class="modal-overlay">
+    <div class="form-box rpg-box char-form-box">
+      <div id="charFormLoading" class="loading-overlay">SAVING...</div>
+      <h3 class="form-title" id="charFormTitle">NEW CHARACTER</h3>
+      <input type="hidden" id="charEditId">
+
+      <div class="field-row">
+        <span class="field-label">이미지</span>
+        <input type="file" id="charImageInput" accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
+        <span style="font-size:9px; color:var(--text-dim); margin-top:4px;">* 여백이 없는 이미지를 사용하여주세요.</span>
+      </div>
+
+      <div class="char-form-2col">
+        <div class="field-row">
+          <span class="field-label">캐릭터명</span>
+          <input class="field-input" id="charNameKrInput" maxlength="20">
+        </div>
+        <div class="field-row">
+          <span class="field-label">캐릭터명(영문)</span>
+          <input class="field-input" id="charNameEnInput" maxlength="30">
+        </div>
+      </div>
+
+      <div class="char-form-2col">
+        <div class="field-row">
+          <span class="field-label">신장</span>
+          <input class="field-input" id="charHeightInput" type="number" placeholder="숫자만 입력">
+        </div>
+        <div class="field-row">
+          <span class="field-label">몸무게</span>
+          <input class="field-input" id="charWeightInput" type="number" placeholder="숫자만 입력">
+        </div>
+      </div>
+
+      <div class="char-form-2col">
+        <div class="field-row">
+          <span class="field-label">emoji</span>
+          <input class="field-input" id="charEmojiInput" maxlength="4">
+        </div>
+        <div class="field-row">
+          <span class="field-label">lv</span>
+          <input class="field-input" id="charLevelInput" type="number">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <span class="field-label">class</span>
+        <input class="field-input" id="charClassInput" placeholder="영문으로 입력 (예: Warrior)">
+      </div>
+
+      <div class="field-row">
+        <span class="field-label">mission</span>
+        <input class="field-input" id="charMissionInput" placeholder="캐릭터의 사명, 목적">
+      </div>
+
+      <div class="char-items-form-header">
+        <span class="field-label">세부설정</span>
+        <button id="charAddItemBtn" class="pixel-btn" style="font-size:9px;padding:6px 8px;">+ ADD</button>
+      </div>
+      <div id="charItemsFormList"></div>
+
+      <div class="confirm-actions" style="margin-top: 15px;">
+        <button id="charSaveBtn" class="pixel-btn">SAVE</button>
+        <button id="charCancelBtn" class="pixel-btn btn-danger">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 /* =====================================================================
    Firebase 설정
@@ -750,112 +1169,45 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 const menuCollection = db.collection("menuItems");
 const galleryCollection = db.collection("galleryItems");
+const characterCollection = db.collection("characters");
 
 /* =====================================================================
    메뉴 목록 (Links)
    ===================================================================== */
 const menuListEl = document.getElementById("menuList");
 let activeId = null;
-let currentMenuData = [];
 
 menuCollection.orderBy("createdAt", "asc").onSnapshot(snapshot => {
   menuListEl.innerHTML = "";
-  currentMenuData = [];
   if (snapshot.empty) {
     menuListEl.innerHTML = `<li class="empty-hint">🤷‍♀️ NO LINK</li>`;
     return;
   }
   snapshot.forEach(doc => {
     const data = doc.data();
-    currentMenuData.push({ id: doc.id, ...data });
-  });
-
-  // order 필드가 있으면 그 값으로, 없으면(기존 데이터) 원래 순서(createdAt asc) 그대로 뒤에 붙도록 정렬
-  currentMenuData.sort((a, b) => {
-    const ao = (a.order !== undefined) ? a.order : Infinity;
-    const bo = (b.order !== undefined) ? b.order : Infinity;
-    return ao - bo;
-  });
-
-  currentMenuData.forEach(data => {
     const li = document.createElement("li");
-    li.className = "menu-item" + (data.id === activeId ? " active" : "");
-    li.draggable = true;
-    li.dataset.id = data.id;
-    li.innerHTML = `<span class="drag-handle">⠿</span><span class="x-btn">✕</span><span class="m-name"></span>`;
+    li.className = "menu-item" + (doc.id === activeId ? " active" : "");
+    li.innerHTML = `<span class="x-btn">✕</span><span class="m-name"></span>`;
     li.querySelector(".m-name").textContent = data.name;
 
     li.addEventListener("click", (e) => {
-      if (e.target.classList.contains("x-btn") || e.target.classList.contains("drag-handle")) return;
-      openLink(data.id, data.link);
+      if (e.target.classList.contains("x-btn")) return;
+      openLink(doc.id, data.link);
     });
 
     li.querySelector(".x-btn").addEventListener("click", (e) => {
       e.stopPropagation();
-      requestDelete('menu', data.id);
+      requestDelete('menu', doc.id);
     });
     li.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      requestDelete('menu', data.id);
-    });
-
-    li.addEventListener("dragstart", (e) => {
-      li.classList.add("dragging");
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", data.id);
-    });
-    li.addEventListener("dragend", () => {
-      li.classList.remove("dragging");
-      menuListEl.querySelectorAll(".menu-item").forEach(el => {
-        el.classList.remove("drag-over-top", "drag-over-bottom");
-      });
+      requestDelete('menu', doc.id);
     });
 
     menuListEl.appendChild(li);
   });
 }, err => {
   console.error(err);
-});
-
-/* -------- 드래그로 순서 변경 -------- */
-menuListEl.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  const dragging = menuListEl.querySelector(".dragging");
-  if (!dragging) return;
-
-  const target = e.target.closest(".menu-item");
-  menuListEl.querySelectorAll(".menu-item").forEach(el => {
-    el.classList.remove("drag-over-top", "drag-over-bottom");
-  });
-  if (!target || target === dragging) return;
-
-  const box = target.getBoundingClientRect();
-  const isAfter = e.clientY - box.top > box.height / 2;
-  target.classList.add(isAfter ? "drag-over-bottom" : "drag-over-top");
-
-  if (isAfter) {
-    target.after(dragging);
-  } else {
-    target.before(dragging);
-  }
-});
-
-menuListEl.addEventListener("drop", async (e) => {
-  e.preventDefault();
-  menuListEl.querySelectorAll(".menu-item").forEach(el => {
-    el.classList.remove("drag-over-top", "drag-over-bottom");
-  });
-
-  const items = [...menuListEl.querySelectorAll(".menu-item")];
-  const batch = db.batch();
-  items.forEach((li, idx) => {
-    batch.update(menuCollection.doc(li.dataset.id), { order: idx });
-  });
-  try {
-    await batch.commit();
-  } catch (err) {
-    console.error("순서 저장 실패:", err);
-  }
 });
 
 /* -------- 링크 추가 -------- */
@@ -899,6 +1251,17 @@ document.getElementById("confirmYes").addEventListener("click", async () => {
     } catch (e) {
       console.error(e);
     }
+  } else if (deleteTarget.type === 'character') {
+    try {
+      if (deleteTarget.extra) {
+        const fileRef = storage.refFromURL(deleteTarget.extra);
+        await fileRef.delete().catch(() => {});
+      }
+      await characterCollection.doc(deleteTarget.id).delete();
+    } catch (e) {
+      console.error(e);
+    }
+    openCharacterList();
   }
   
   deleteTarget = { type: null, id: null, extra: null };
@@ -916,6 +1279,8 @@ document.getElementById("confirmNo").addEventListener("click", () => {
 const waitingScreen = document.getElementById("waitingScreen");
 const contentFrame = document.getElementById("contentFrame");
 const galleryScreen = document.getElementById("galleryScreen");
+const characterListScreen = document.getElementById("characterListScreen");
+const characterDetailScreen = document.getElementById("characterDetailScreen");
 const closeContentBtn = document.getElementById("closeContentBtn");
 const openNewTabBtn = document.getElementById("openNewTabBtn");
 let currentLinkUrl = "";
@@ -924,6 +1289,8 @@ function hideAllScreens() {
   waitingScreen.style.display = "none";
   contentFrame.style.display = "none";
   galleryScreen.style.display = "none";
+  characterListScreen.style.display = "none";
+  characterDetailScreen.style.display = "none";
   closeContentBtn.style.display = "none";
   openNewTabBtn.style.display = "none";
 }
@@ -951,6 +1318,17 @@ function openGallery() {
   closeContentBtn.style.display = "block"; 
 }
 
+function openCharacterList() {
+  activeId = null;
+  currentLinkUrl = "";
+  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
+  contentFrame.src = "about:blank";
+
+  hideAllScreens();
+  characterListScreen.style.display = "block";
+  closeContentBtn.style.display = "block";
+}
+
 function closeContent(){
   activeId = null;
   currentLinkUrl = "";
@@ -962,6 +1340,7 @@ function closeContent(){
 }
 
 document.getElementById("galleryBtn").addEventListener("click", openGallery);
+document.getElementById("characterBtn").addEventListener("click", openCharacterList);
 closeContentBtn.addEventListener("click", closeContent);
 openNewTabBtn.addEventListener("click", () => {
   if (currentLinkUrl) window.open(currentLinkUrl, "_blank", "noopener,noreferrer");
@@ -1120,6 +1499,231 @@ gallerySaveBtn.addEventListener("click", async () => {
   } finally {
     formLoading.style.display = "none";
   }
+});
+
+/* =====================================================================
+   캐릭터(WHO ARE YOU?) 게시판 구현
+   ===================================================================== */
+const characterGrid = document.getElementById("characterGrid");
+const characterFormOverlay = document.getElementById("characterFormOverlay");
+const openCharWriteBtn = document.getElementById("openCharWriteBtn");
+const charSaveBtn = document.getElementById("charSaveBtn");
+const charCancelBtn = document.getElementById("charCancelBtn");
+const charFormLoading = document.getElementById("charFormLoading");
+const charFormTitle = document.getElementById("charFormTitle");
+const charEditId = document.getElementById("charEditId");
+const charImageInput = document.getElementById("charImageInput");
+const charNameKrInput = document.getElementById("charNameKrInput");
+const charNameEnInput = document.getElementById("charNameEnInput");
+const charHeightInput = document.getElementById("charHeightInput");
+const charWeightInput = document.getElementById("charWeightInput");
+const charEmojiInput = document.getElementById("charEmojiInput");
+const charLevelInput = document.getElementById("charLevelInput");
+const charClassInput = document.getElementById("charClassInput");
+const charMissionInput = document.getElementById("charMissionInput");
+const charAddItemBtn = document.getElementById("charAddItemBtn");
+const charItemsFormList = document.getElementById("charItemsFormList");
+
+let currentCharacterData = [];
+let currentCharacterImageUrl = null; // 수정 시 기존 이미지 유지용
+
+/* -------- 글쓰기 폼: 커스텀 항목(자유 기입) 행 추가/삭제 -------- */
+function addCharItemRow(name = "", content = ""){
+  const row = document.createElement("div");
+  row.className = "char-item-form-row";
+  row.innerHTML = `
+    <input class="field-input char-item-name-input" placeholder="항목명 (예: 성격)" maxlength="20" value="${name.replace(/"/g,'&quot;')}">
+    <textarea class="field-input char-item-content-input">${content}</textarea>
+    <button type="button" class="char-item-remove-btn">X</button>
+  `;
+  row.querySelector(".char-item-remove-btn").addEventListener("click", () => row.remove());
+  charItemsFormList.appendChild(row);
+}
+charAddItemBtn.addEventListener("click", () => addCharItemRow());
+
+function collectCharItemsFromForm(){
+  return [...charItemsFormList.querySelectorAll(".char-item-form-row")]
+    .map(row => ({
+      name: row.querySelector(".char-item-name-input").value.trim(),
+      content: row.querySelector(".char-item-content-input").value.trim()
+    }))
+    .filter(item => item.name || item.content);
+}
+
+/* -------- 목록 렌더링 (실시간 동기화, Player N 자동 넘버링) -------- */
+characterCollection.orderBy("createdAt", "asc").onSnapshot(snapshot => {
+  characterGrid.innerHTML = "";
+  currentCharacterData = [];
+  let index = 1;
+
+  if (snapshot.empty) {
+    characterGrid.innerHTML = `<div class="empty-hint">🤷‍♀️ No playable characters</div>`;
+    return;
+  }
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    currentCharacterData.push({ id: doc.id, ...data });
+
+    const card = document.createElement("div");
+    card.className = "character-card rpg-box";
+    card.innerHTML = `
+      <div class="character-file-label">Player ${index}</div>
+      <div class="character-img-wrap">
+        <img src="${data.imageUrl || ''}" alt="${data.nameKr || ''}">
+      </div>
+      <div class="gallery-actions">
+        <button class="pixel-btn edit-btn">EDIT</button>
+        <button class="pixel-btn del-btn">DEL</button>
+      </div>
+    `;
+
+    card.querySelector(".character-img-wrap").addEventListener("click", () => {
+      openCharacterDetail(doc.id);
+    });
+    card.querySelector(".edit-btn").addEventListener("click", () => {
+      openCharacterForm(doc.id, data);
+    });
+    card.querySelector(".del-btn").addEventListener("click", () => {
+      requestDelete('character', doc.id, data.imageUrl);
+    });
+
+    characterGrid.appendChild(card);
+    index++;
+  });
+}, err => console.error("Character Sync Error: ", err));
+
+/* -------- 글쓰기/수정 폼 열기 -------- */
+function openCharacterForm(id = null, data = null){
+  charEditId.value = id || "";
+  currentCharacterImageUrl = data ? (data.imageUrl || null) : null;
+  charNameKrInput.value = data ? (data.nameKr || "") : "";
+  charNameEnInput.value = data ? (data.nameEn || "") : "";
+  charHeightInput.value = data ? (data.height ?? "") : "";
+  charWeightInput.value = data ? (data.weight ?? "") : "";
+  charEmojiInput.value = data ? (data.emoji || "") : "";
+  charLevelInput.value = data ? (data.level ?? "") : "";
+  charClassInput.value = data ? (data.charClass || "") : "";
+  charMissionInput.value = data ? (data.mission || "") : "";
+  charImageInput.value = "";
+
+  charItemsFormList.innerHTML = "";
+  if (data && Array.isArray(data.items)) {
+    data.items.forEach(item => addCharItemRow(item.name, item.content));
+  }
+
+  charFormTitle.textContent = id ? "EDIT CHARACTER" : "NEW CHARACTER";
+  characterFormOverlay.classList.add("show");
+}
+
+openCharWriteBtn.addEventListener("click", () => openCharacterForm());
+charCancelBtn.addEventListener("click", () => {
+  characterFormOverlay.classList.remove("show");
+});
+
+charSaveBtn.addEventListener("click", async () => {
+  const id = charEditId.value;
+  const nameKr = charNameKrInput.value.trim();
+  const nameEn = charNameEnInput.value.trim();
+  const height = charHeightInput.value.trim();
+  const weight = charWeightInput.value.trim();
+  const emoji = charEmojiInput.value.trim();
+  const level = charLevelInput.value.trim();
+  const charClass = charClassInput.value.trim();
+  const mission = charMissionInput.value.trim();
+  const file = charImageInput.files[0];
+
+  if (!nameKr || !nameEn) return alert("캐릭터명(한글/영문)을 입력하십시오.");
+  if (!id && !file) return alert("이미지를 첨부하십시오.");
+
+  charFormLoading.style.display = "flex";
+
+  try {
+    let imageUrl = null;
+    if (file) {
+      const webpBlob = await convertToWebP(file);
+      const filename = `character_${Date.now()}.webp`;
+      const storageRef = storage.ref().child('characters/' + filename);
+      await storageRef.put(webpBlob);
+      imageUrl = await storageRef.getDownloadURL();
+    }
+
+    const payload = {
+      nameKr, nameEn,
+      height: height ? Number(height) : null,
+      weight: weight ? Number(weight) : null,
+      emoji, charClass,
+      level: level ? Number(level) : null,
+      mission,
+      items: collectCharItemsFromForm()
+    };
+    if (imageUrl) payload.imageUrl = imageUrl;
+
+    if (id) {
+      await characterCollection.doc(id).update(payload);
+    } else {
+      payload.imageUrl = imageUrl;
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await characterCollection.add(payload);
+    }
+
+    characterFormOverlay.classList.remove("show");
+  } catch (error) {
+    console.error("Character save failed: ", error);
+    alert("오류가 발생했습니다.\n[" + (error && (error.code || error.name) || "unknown") + "] " + (error && error.message ? error.message : error));
+  } finally {
+    charFormLoading.style.display = "none";
+  }
+});
+
+/* -------- 상세 시트 렌더링 -------- */
+let currentDetailCharId = null;
+
+function openCharacterDetail(id){
+  const data = currentCharacterData.find(c => c.id === id);
+  if (!data) return;
+  currentDetailCharId = id;
+
+  document.getElementById("charDetailEmoji").textContent = data.emoji || "🗡️";
+  document.getElementById("charDetailClass").textContent = data.charClass || "Chara Class";
+  document.getElementById("charDetailLevel").textContent = (data.level ?? "-");
+  document.getElementById("charDetailNameKr").textContent = data.nameKr || "캐릭터명";
+  document.getElementById("charDetailNameEn").textContent = data.nameEn || "Charaname";
+  document.getElementById("charDetailStats").textContent =
+    `${data.height ?? '00'}cm ${data.weight ?? '00'}kg`;
+  document.getElementById("charDetailMission").textContent = data.mission || "";
+  document.getElementById("charDetailImg").src = data.imageUrl || "";
+
+  const itemsBox = document.getElementById("charDetailItems");
+  itemsBox.innerHTML = "";
+  if (Array.isArray(data.items) && data.items.length){
+    data.items.forEach(item => {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = `
+        <div class="char-item-name"></div>
+        <div class="char-item-content"></div>
+      `;
+      wrap.querySelector(".char-item-name").textContent = item.name || "";
+      wrap.querySelector(".char-item-content").textContent = item.content || "";
+      itemsBox.appendChild(wrap);
+    });
+  } else {
+    itemsBox.innerHTML = `<div class="empty-hint">등록된 항목이 없습니다</div>`;
+  }
+
+  hideAllScreens();
+  characterDetailScreen.style.display = "flex";
+  closeContentBtn.style.display = "block";
+}
+
+document.getElementById("charDetailCloseBtn").addEventListener("click", openCharacterList);
+document.getElementById("charDetailEditBtn").addEventListener("click", () => {
+  const data = currentCharacterData.find(c => c.id === currentDetailCharId);
+  if (data) openCharacterForm(currentDetailCharId, data);
+});
+document.getElementById("charDetailDelBtn").addEventListener("click", () => {
+  const data = currentCharacterData.find(c => c.id === currentDetailCharId);
+  if (data) requestDelete('character', currentDetailCharId, data.imageUrl);
 });
 
 /* =====================================================================
