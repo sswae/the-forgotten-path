@@ -663,7 +663,8 @@ const firebaseConfig = {
   let contextTargetId = null;
 
   function isConfigured(cfg){
-    return cfg.apiKey && cfg.apiKey !== "AIzaSyDdwSkHiw0l9XsRSOrf6_1r0Izitb7PV9U";
+    const placeholder = /^(YOUR_API_KEY|REPLACE_ME|PLACEHOLDER)$/i;
+    return !!(cfg.apiKey && cfg.apiKey.length > 10 && !placeholder.test(cfg.apiKey));
   }
 
   if (isConfigured(firebaseConfig)) {
