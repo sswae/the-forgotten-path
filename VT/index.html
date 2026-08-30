@@ -535,7 +535,7 @@
     <hr class="divider" />
 
     <section class="greeting">
-      <p>😎 GREETINGS, UNDERGROUND RESIDENTS.</p>
+      <p>🙂 GREETINGS, UNDERGROUND RESIDENTS.</p>
     </section>
 
     <hr class="divider" />
@@ -676,6 +676,8 @@
     } catch (err) {
       console.error(err);
       statusEl.textContent = "CONNECTION ERROR";
+      submitBtn.disabled = true;
+      formHint.textContent = "Firebase 연결에 실패했습니다. 설정 값과 콘솔 오류를 확인해주세요.";
     }
   } else {
     statusEl.textContent = "⚠ FIREBASE 설정 필요 (index.html 상단 firebaseConfig)";
@@ -843,7 +845,10 @@
   // ---------------- submit ----------------
   cargoForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!firebaseReady) return;
+    if (!firebaseReady) {
+      formHint.textContent = "⚠ Firebase에 연결되지 않았습니다. 하단 상태 표시(STATUS)를 확인해주세요.";
+      return;
+    }
 
     const file = imageInput.files[0];
     const linkTitle = linkTitleInput.value.trim();
@@ -908,7 +913,7 @@
       closeModalFn(addModalOverlay);
     } catch (err) {
       console.error(err);
-      formHint.textContent = "저장 중 오류가 발생했습니다. 다시 시도해주세요.";
+      formHint.textContent = "저장 중 오류가 발생했습니다: " + (err && err.message ? err.message : "다시 시도해주세요.");
     } finally {
       submitBtn.disabled = false;
     }
