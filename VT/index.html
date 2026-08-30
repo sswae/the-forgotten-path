@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>⚡️VAULTRAIL TRANSIT</title>
+
+<!-- ===================================================================
+  FIREBASE 설정 안내
+  아래 firebaseConfig 값을 본인의 Firebase 프로젝트 설정으로 교체하세요.
+  Firestore(데이터베이스) + Storage(이미지 저장소)를 사용합니다.
+  자세한 설정 방법은 함께 전달된 README.md 를 참고하세요.
+==================================================================== -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- 폰트별로 링크를 분리 -- 하나의 family 요청이 실패해도 나머지 폰트에 영향이 없도록 함 -->
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&display=swap" rel="stylesheet" />
+
+<style>
+  @font-face {
+    font-family: 'DungGeunMo';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Geist Pixel';
+    src: url('https://cdn.jsdelivr.net/fontsource/fonts/geist-pixel@5.3.0/latin-400-normal.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  :root{
+    --brand:#f39800;      /* 주 컬러: 오렌지 */
+    --ink:#151515;        /* 주 컬러: 다크 */
+    --brand-06: rgba(243,152,0,.06);
+    --brand-12: rgba(243,152,0,.12);
+    --brand-25: rgba(243,152,0,.25);
+    --brand-45: rgba(243,152,0,.45);
+    --brand-70: rgba(243,152,0,.70);
+    --ink-55: rgba(21,21,21,.55);
+    --ink-80: rgba(21,21,21,.80);
+    --font-display:'Bowlby One','DungGeunMo',sans-serif;
+    --font-pixel:'Geist Pixel','DungGeunMo',sans-serif;
+    --font-kr:'DungGeunMo','Geist Pixel',sans-serif;
+    /* CRT 형광 번짐(글로우) 효과 */
+    --glow-text: 0 0 3px var(--brand), 0 0 9px rgba(243,152,0,.65), 0 0 20px rgba(243,152,0,.35);
+    --glow-line: 0 0 2px rgba(243,152,0,.9), 0 0 8px rgba(243,152,0,.6);
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--ink);
+    color:var(--brand);
+    min-height:100%;
+  }
+
+  body{
+    font-family:var(--font-kr);
+    display:flex;
+    justify-content:center;
+  }
+
+  /* 스크롤바: 오렌지 컬러로 통일 */
+  *{
+    scrollbar-width:thin;
+    scrollbar-color:var(--brand) var(--ink);
+  }
+  *::-webkit-scrollbar{ width:9px; height:9px; }
+  *::-webkit-scrollbar-track{ background:var(--ink); }
+  *::-webkit-scrollbar-thumb{
+    background:var(--brand);
+    border-radius:0;
+    border:2px solid var(--ink);
+  }
+  *::-webkit-scrollbar-corner{ background:var(--ink); }
+
+  .app{
+    width:100%;
+    max-width:450px;
+    min-height:100vh;
+    background:var(--ink);
+    border-left:1px solid var(--brand-25);
+    border-right:1px solid var(--brand-25);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+
+  @media (max-width:450px){
+    .app{ border-left:none; border-right:none; }
+  }
+
+  main{
+    flex:1;
+    padding:20px 22px 40px;
+  }
+
+  /* ---------- header / logo ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+
+  .logo{
+    width:42px;
+    height:42px;
+    flex-shrink:0;
+    display:block;
+    filter:drop-shadow(0 0 2px var(--brand)) drop-shadow(0 0 7px rgba(243,152,0,.6));
+  }
+  .logo polygon{ fill:var(--brand); }
+
+  .brand-name{
+    font-family:var(--font-display);
+    font-weight:400;
+    font-size:1.5rem;
+    letter-spacing:.02em;
+    margin:0;
+    line-height:1;
+    color:var(--brand);
+    text-shadow:var(--glow-text);
+  }
+
+  .btn-add{
+    font-family:var(--font-pixel);
+    background:var(--brand);
+    color:var(--ink);
+    border:none;
+    padding:8px 12px;
+    font-size:.68rem;
+    letter-spacing:.03em;
+    cursor:pointer;
+    white-space:nowrap;
+    box-shadow:0 0 10px rgba(243,152,0,.55);
+  }
+  .btn-add:hover{ background:var(--brand-70); }
+  .btn-add:active{ transform:translateY(1px); }
+
+  .deco-lines{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin:12px 0 18px;
+  }
+  .deco-lines div{ height:2px; background:var(--brand); box-shadow:var(--glow-line); }
+  .deco-lines div:nth-child(1){ width:58%; margin-left:42%; }
+  .deco-lines div:nth-child(2){ width:74%; margin-left:26%; }
+  .deco-lines div:nth-child(3){ width:88%; margin-left:12%; }
+  .deco-lines div:nth-child(4){ width:100%; }
+  .deco-lines div:nth-child(5){ width:100%; }
+  .deco-lines div:nth-child(6){ width:100%; }
+
+  .divider{
+    border:none;
+    height:2px;
+    background:var(--brand);
+    margin:16px 0;
+    opacity:.9;
+    box-shadow:var(--glow-line);
+  }
+
+  /* ---------- greeting ---------- */
+  .greeting p{
+    font-family:'Geist Pixel','DungGeunMo',sans-serif;
+    font-size:1rem;
+    letter-spacing:.02em;
+    margin:0;
+    line-height:1.45;
+    text-shadow:var(--glow-text);
+  }
+
+  /* ---------- intro + globe ---------- */
+  .intro{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+  }
+  .intro-text{
+    flex:1;
+    font-family:var(--font-pixel);
+    font-size:.64rem;
+    line-height:1.65;
+    letter-spacing:.01em;
+    text-shadow:var(--glow-text);
+  }
+  .intro-text p{ margin:0 0 10px; }
+  .intro-text p:last-child{ margin-bottom:0; }
+
+  .globe{
+    flex-shrink:0;
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    position:relative;
+    overflow:hidden;
+    margin-top:2px;
+    background:
+      radial-gradient(circle at 30% 26%, var(--brand) 0%, rgba(243,152,0,.55) 45%, rgba(21,21,21,.55) 82%, var(--ink) 100%);
+    box-shadow:
+      inset -11px -11px 16px rgba(21,21,21,.75),
+      inset 6px 6px 10px rgba(243,152,0,.4),
+      0 0 14px rgba(243,152,0,.5);
+  }
+  /* 얇은 세로 줄무늬가 매끄럽게 흐르며 자전하는 듯한 효과 (이음새 없이 반복) */
+.globe {
+  position: relative;
+  width: 80px; /* 원하는 구체 크기 */
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  /* 레트로 CRT 앰버/노란색 메인 스크린 (초록색 모니터는 #00ff66 등 변경 가능) */
+  background-color: #e5b000;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+}
+
+/* 픽셀 대륙 지형 + 촘촘한 수직 스캔라인이 함께 회전하는 메인 레이어 */
+.globe span {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    /* 1. CRT 수직 스캔라인 (1px 줄무늬) */
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.5) 0px,
+      rgba(0, 0, 0, 0.5) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    /* 2. 레트로 CRT 스타일 픽셀 대륙 패턴 (Data URI) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='100' viewBox='0 0 160 100'%3E%3Cpath fill='%23000' fill-opacity='0.7' d='M0 10h40v15H20v10H0zm60 5h50v20H90v15H60zm-30 40h40v20H40v10H30zm80-15h40v30h-20v10h-20zM10 80h30v15H10z'/%3E%3C/svg%3E");
+  background-size: 100% 100%, 160px 100%;
+  background-repeat: repeat, repeat-x;
+  mix-blend-mode: multiply;
+  animation: globe-spin 6s linear infinite;
+}
+
+/* 구체 입체감을 극대화하는 광원 및 가장자리 비네팅 오버레이 */
+.globe::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    transparent 30%,
+    rgba(21, 21, 21, 0.5) 70%,
+    rgba(0, 0, 0, 0.95) 100%
+  );
+  pointer-events: none;
+}
+
+/* 패턴 폭(160px)에 맞춰 이음새 없이 연속으로 자전하는 애니메이션 */
+@keyframes globe-spin {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 0, -160px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .globe span { animation: none; }
+}
+
+  /* ---------- gallery ---------- */
+  .gallery{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+  }
+
+  .card{
+    aspect-ratio:1/1;
+    position:relative;
+    overflow:hidden;
+    border:1px solid var(--brand-45);
+    cursor:pointer;
+    background:var(--ink);
+    box-shadow:0 0 8px rgba(243,152,0,.3);
+  }
+
+  .card.image-card img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    filter:grayscale(1) contrast(1.15) brightness(1.05);
+  }
+  .card.image-card::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:var(--brand);
+    mix-blend-mode:color;
+    opacity:.88;
+    pointer-events:none;
+  }
+  .card.image-card .link-badge{
+    position:absolute;
+    right:4px;
+    bottom:4px;
+    background:var(--ink);
+    color:var(--brand);
+    font-family:var(--font-pixel);
+    font-size:.55rem;
+    padding:2px 5px;
+    z-index:2;
+    letter-spacing:.02em;
+  }
+
+  .card.link-card{
+    background:var(--brand);
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:8px;
+  }
+  .card.link-card span{
+    font-family:var(--font-kr);
+    font-size:.72rem;
+    line-height:1.35;
+    word-break:break-word;
+  }
+
+  .empty-state{
+    grid-column:1/-1;
+    font-family:var(--font-pixel);
+    font-size:.68rem;
+    text-align:center;
+    padding:30px 10px;
+    opacity:.7;
+    line-height:1.7;
+    text-shadow:var(--glow-text);
+  }
+
+  /* ---------- modals ---------- */
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(21,21,21,.86);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .modal-overlay.open{ display:flex; }
+
+  .modal{
+    width:100%;
+    max-width:380px;
+    max-height:88vh;
+    overflow-y:auto;
+    background:var(--ink);
+    border:2px solid var(--brand);
+    padding:18px;
+  }
+
+  .modal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .modal-head h2{
+    font-family:var(--font-display);
+    font-size:1.05rem;
+    margin:0;
+    color:var(--brand);
+    text-shadow:var(--glow-text);
+  }
+
+  .modal-close{
+    background:none;
+    border:1px solid var(--brand);
+    color:var(--brand);
+    width:26px;
+    height:26px;
+    font-size:1rem;
+    line-height:1;
+    cursor:pointer;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:14px;
+    font-family:var(--font-pixel);
+    font-size:.68rem;
+  }
+  .field span{ letter-spacing:.02em; }
+
+  .field input[type="text"],
+  .field input[type="url"]{
+    background:var(--ink);
+    border:1px solid var(--brand-70);
+    color:var(--brand);
+    padding:9px 8px;
+    font-family:var(--font-kr);
+    font-size:.85rem;
+    outline:none;
+  }
+  .field input[type="text"]:focus,
+  .field input[type="url"]:focus{ border-color:var(--brand); }
+
+  .field input[type="file"]{
+    font-family:var(--font-kr);
+    font-size:.72rem;
+    color:var(--brand);
+  }
+
+  .preview{
+    margin-top:6px;
+    max-width:140px;
+  }
+  .preview img{
+    width:100%;
+    display:block;
+    border:1px solid var(--brand-45);
+  }
+
+  .form-hint{
+    font-family:var(--font-pixel);
+    font-size:.62rem;
+    min-height:14px;
+    margin:0 0 10px;
+    opacity:.85;
+  }
+
+  .btn-submit{
+    width:100%;
+    font-family:var(--font-pixel);
+    background:var(--brand);
+    color:var(--ink);
+    border:none;
+    padding:11px;
+    font-size:.75rem;
+    letter-spacing:.04em;
+    cursor:pointer;
+  }
+  .btn-submit:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .lightbox{
+    position:relative;
+    max-width:100%;
+    max-height:88vh;
+  }
+  .lightbox img{
+    max-width:100%;
+    max-height:88vh;
+    display:block;
+    border:2px solid var(--brand);
+  }
+  .lightbox .modal-close{
+    position:absolute;
+    top:-14px;
+    right:-14px;
+    background:var(--ink);
+  }
+
+  .statusbar{
+    font-family:var(--font-pixel);
+    font-size:.6rem;
+    text-align:center;
+    padding:10px;
+    border-top:1px solid var(--brand-25);
+    opacity:.75;
+    letter-spacing:.02em;
+    text-shadow:0 0 6px rgba(243,152,0,.5);
+  }
+
+  /* ---------- card context menu (우클릭 수정/삭제) ---------- */
+  .context-menu{
+    position:fixed;
+    z-index:100;
+    min-width:130px;
+    background:var(--ink);
+    border:1px solid var(--brand);
+    box-shadow:0 0 12px rgba(243,152,0,.5);
+    display:none;
+    overflow:hidden;
+  }
+  .context-menu.open{ display:block; }
+  .context-menu button{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    width:100%;
+    background:none;
+    border:none;
+    color:var(--brand);
+    font-family:var(--font-pixel);
+    font-size:.68rem;
+    letter-spacing:.02em;
+    text-align:left;
+    padding:10px 12px;
+    cursor:pointer;
+  }
+  .context-menu button + button{ border-top:1px solid var(--brand-25); }
+  .context-menu button:hover{ background:var(--brand-12); }
+  .context-menu button.danger{ color:#ff6b5e; }
+  .context-menu button.danger:hover{ background:rgba(255,107,94,.12); }
+</style>
+</head>
+<body>
+<div class="app">
+  <main>
+    <header class="topbar">
+      <div class="brand">
+<img src="logo.png" alt="Vaultrail Transit Logo" class="logo">
+        <h1 class="brand-name">VT Transit</h1>
+      </div>
+      <button class="btn-add" id="addCargoBtn" type="button">+ add cargo</button>
+    </header>
+
+    <div class="deco-lines" aria-hidden="true">
+      <div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+
+    <hr class="divider" />
+
+    <section class="greeting">
+      <p>😎 GREETINGS, UNDERGROUND RESIDENTS.</p>
+    </section>
+
+    <hr class="divider" />
+
+    <section class="intro">
+      <div class="intro-text">
+        <p>&gt;&gt; VAULTRAIL TRANSIT IS COMMITTED TO DELIVERING ESSENTIAL SUPPLIES SAFELY ACROSS THE DEEP CRUST. MIND THE AIRLOCK SEALS.</p>
+        <p>&gt;&gt; VAULTRAIL TRANSIT SYSTEM // CONNECTING DEEP SECTORS 01-12. RELIABLE CARGO AND PASSENGER TRANSPORTATION. SYSTEM STATUS: OPTIMAL.</p>
+      </div>
+      <div class="globe" aria-hidden="true"><span></span></div>
+    </section>
+
+    <hr class="divider" />
+
+    <section class="gallery" id="gallery">
+      <p class="empty-state" id="emptyState">아직 등록된 화물이 없습니다.<br />첫 화물을 등록해보세요.</p>
+    </section>
+  </main>
+
+  <footer class="statusbar">SYSTEM STATUS: <span id="fbStatus">CONNECTING...</span></footer>
+</div>
+
+<!-- 화물 등록 모달 -->
+<div class="modal-overlay" id="addModalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+    <div class="modal-head">
+      <h2 id="addModalTitle">NEW CARGO</h2>
+      <button class="modal-close" id="closeAddModal" type="button" aria-label="닫기">×</button>
+    </div>
+    <form id="cargoForm">
+      <label class="field">
+        <span>이미지 첨부</span>
+        <input type="file" id="imageInput" accept="image/*" />
+        <div class="preview" id="imagePreview"></div>
+      </label>
+      <label class="field">
+        <span>링크 제목</span>
+        <input type="text" id="linkTitleInput" placeholder="예: 회로도 아카이브" maxlength="60" />
+      </label>
+      <label class="field">
+        <span>링크 주소</span>
+        <input type="url" id="linkUrlInput" placeholder="https://" />
+      </label>
+      <p class="form-hint" id="formHint"></p>
+      <button type="submit" class="btn-submit" id="submitBtn">전송 &gt;&gt;</button>
+    </form>
+  </div>
+</div>
+
+<!-- 이미지 원본 보기 모달 -->
+<div class="modal-overlay" id="lightboxOverlay">
+  <div class="lightbox">
+    <button class="modal-close" id="closeLightbox" type="button" aria-label="닫기">×</button>
+    <img id="lightboxImg" src="" alt="cargo full image" />
+  </div>
+</div>
+
+<!-- 갤러리 카드 우클릭(롱프레스) 메뉴 -->
+<div class="context-menu" id="cardContextMenu">
+  <button type="button" id="ctxEdit">✎ 수정</button>
+  <button type="button" id="ctxDelete" class="danger">✕ 삭제</button>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, onSnapshot,
+    query, orderBy, limit, serverTimestamp,
+    doc, updateDoc, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+  // ===================================================================
+  // 여기에 본인의 Firebase 프로젝트 설정 값을 넣어주세요.
+  // Firebase 콘솔 > 프로젝트 설정 > 일반 > 내 앱 에서 확인할 수 있습니다.
+  // ===================================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyDdwSkHiw0l9XsRSOrf6_1r0Izitb7PV9U",
+    authDomain: "kasis-tfp.firebaseapp.com",
+    projectId: "kasis-tfp",
+    storageBucket: "kasis-tfp.firebasestorage.app",
+    messagingSenderId: "973760135804",
+    appId: "1:973760135804:web:34383d9ca53d2c39bffff9"
+  };
+
+  // 파이어베이스 내 여러 앱이 공존하므로 이 앱의 데이터는
+  // 컬렉션명 앞에 "VT_" 를 붙여 구분합니다.
+  const POSTS_COLLECTION = "VT_posts";
+  const STORAGE_FOLDER = "VT_cargo";
+
+  const statusEl = document.getElementById("fbStatus");
+  const gallery = document.getElementById("gallery");
+  const emptyState = document.getElementById("emptyState");
+
+  const addCargoBtn = document.getElementById("addCargoBtn");
+  const addModalOverlay = document.getElementById("addModalOverlay");
+  const closeAddModal = document.getElementById("closeAddModal");
+  const cargoForm = document.getElementById("cargoForm");
+  const imageInput = document.getElementById("imageInput");
+  const imagePreview = document.getElementById("imagePreview");
+  const linkTitleInput = document.getElementById("linkTitleInput");
+  const linkUrlInput = document.getElementById("linkUrlInput");
+  const formHint = document.getElementById("formHint");
+  const submitBtn = document.getElementById("submitBtn");
+
+  const lightboxOverlay = document.getElementById("lightboxOverlay");
+  const lightboxImg = document.getElementById("lightboxImg");
+  const closeLightbox = document.getElementById("closeLightbox");
+
+  const contextMenu = document.getElementById("cardContextMenu");
+  const ctxEdit = document.getElementById("ctxEdit");
+  const ctxDelete = document.getElementById("ctxDelete");
+  const addModalTitle = document.getElementById("addModalTitle");
+
+  let db = null;
+  let storage = null;
+  let firebaseReady = false;
+
+  // 수정/삭제를 위한 게시물 캐시 및 현재 수정 중인 문서 id
+  const postsCache = new Map();
+  let editingId = null;
+  let contextTargetId = null;
+
+  function isConfigured(cfg){
+    return cfg.apiKey && cfg.apiKey !== "AIzaSyDdwSkHiw0l9XsRSOrf6_1r0Izitb7PV9U";
+  }
+
+  if (isConfigured(firebaseConfig)) {
+    try {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      storage = getStorage(app);
+      firebaseReady = true;
+      statusEl.textContent = "OPTIMAL";
+      listenToPosts();
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = "CONNECTION ERROR";
+    }
+  } else {
+    statusEl.textContent = "⚠ FIREBASE 설정 필요 (index.html 상단 firebaseConfig)";
+    submitBtn.disabled = true;
+    formHint.textContent = "Firebase 설정을 먼저 완료해주세요.";
+  }
+
+  // ---------------- modal open/close ----------------
+  function openModal(overlay){
+    overlay.classList.add("open");
+  }
+  function closeModalFn(overlay){
+    overlay.classList.remove("open");
+  }
+
+  function resetToCreateMode(){
+    editingId = null;
+    addModalTitle.textContent = "NEW CARGO";
+    submitBtn.textContent = "전송 >>";
+    cargoForm.reset();
+    imagePreview.innerHTML = "";
+    formHint.textContent = "";
+  }
+
+  addCargoBtn.addEventListener("click", () => {
+    resetToCreateMode();
+    openModal(addModalOverlay);
+  });
+  closeAddModal.addEventListener("click", () => closeModalFn(addModalOverlay));
+  addModalOverlay.addEventListener("click", (e) => {
+    if (e.target === addModalOverlay) closeModalFn(addModalOverlay);
+  });
+
+  closeLightbox.addEventListener("click", () => closeModalFn(lightboxOverlay));
+  lightboxOverlay.addEventListener("click", (e) => {
+    if (e.target === lightboxOverlay) closeModalFn(lightboxOverlay);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeModalFn(addModalOverlay);
+      closeModalFn(lightboxOverlay);
+      hideContextMenu();
+    }
+  });
+
+  // ---------------- 카드 우클릭 메뉴 (수정 / 삭제) ----------------
+  function showContextMenu(x, y, id){
+    contextTargetId = id;
+    const menuWidth = 140, menuHeight = 90;
+    const posX = Math.min(x, window.innerWidth - menuWidth - 8);
+    const posY = Math.min(y, window.innerHeight - menuHeight - 8);
+    contextMenu.style.left = posX + "px";
+    contextMenu.style.top = posY + "px";
+    contextMenu.classList.add("open");
+  }
+  function hideContextMenu(){
+    contextMenu.classList.remove("open");
+    contextTargetId = null;
+  }
+
+  document.addEventListener("click", (e) => {
+    if (!contextMenu.contains(e.target)) hideContextMenu();
+  });
+  document.addEventListener("scroll", hideContextMenu, true);
+  window.addEventListener("resize", hideContextMenu);
+
+  ctxEdit.addEventListener("click", () => {
+    const id = contextTargetId;
+    hideContextMenu();
+    const post = postsCache.get(id);
+    if (post) openEditModal(post);
+  });
+
+  ctxDelete.addEventListener("click", () => {
+    const id = contextTargetId;
+    hideContextMenu();
+    if (id) confirmAndDelete(id);
+  });
+
+  function openEditModal(post){
+    editingId = post.id;
+    addModalTitle.textContent = "EDIT CARGO";
+    submitBtn.textContent = "수정 >>";
+    linkTitleInput.value = post.linkTitle || "";
+    linkUrlInput.value = post.linkURL || "";
+    imageInput.value = "";
+    imagePreview.innerHTML = "";
+    if (post.imageURL) {
+      const img = document.createElement("img");
+      img.src = post.imageURL;
+      imagePreview.appendChild(img);
+      formHint.textContent = "새 이미지를 선택하면 기존 이미지가 교체됩니다.";
+    } else {
+      formHint.textContent = "";
+    }
+    openModal(addModalOverlay);
+  }
+
+  async function confirmAndDelete(id){
+    const post = postsCache.get(id);
+    const label = (post && post.linkTitle) ? post.linkTitle : "이 화물";
+    const ok = window.confirm(`"${label}"을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`);
+    if (!ok) return;
+    try {
+      if (post && post.imagePath) {
+        try { await deleteObject(ref(storage, post.imagePath)); }
+        catch (err) { console.warn("스토리지 이미지 삭제 실패:", err); }
+      }
+      await deleteDoc(doc(db, POSTS_COLLECTION, id));
+    } catch (err) {
+      console.error(err);
+      alert("삭제 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
+  }
+
+  // ---------------- image preview ----------------
+  imageInput.addEventListener("change", () => {
+    imagePreview.innerHTML = "";
+    const file = imageInput.files[0];
+    if (!file) return;
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    imagePreview.appendChild(img);
+  });
+
+  // ---------------- webp conversion ----------------
+  function fileToWebP(file, maxDim = 1600, quality = 0.85){
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(objectUrl);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("webp 변환 실패"))),
+          "image/webp",
+          quality
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("이미지를 불러올 수 없습니다."));
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  function normalizeUrl(url){
+    if (!url) return "";
+    if (!/^https?:\/\//i.test(url)) return "https://" + url;
+    return url;
+  }
+
+  // ---------------- submit ----------------
+  cargoForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!firebaseReady) return;
+
+    const file = imageInput.files[0];
+    const linkTitle = linkTitleInput.value.trim();
+    const linkUrlRaw = linkUrlInput.value.trim();
+    const existing = editingId ? (postsCache.get(editingId) || {}) : null;
+    const willHaveImage = file ? true : (existing ? !!existing.imageURL : false);
+
+    if (!willHaveImage && !linkTitle && !linkUrlRaw) {
+      formHint.textContent = "이미지 또는 링크 정보를 입력해주세요.";
+      return;
+    }
+    if (linkUrlRaw && !linkTitle) {
+      formHint.textContent = "링크에는 제목이 필요합니다.";
+      return;
+    }
+    if (linkTitle && !linkUrlRaw) {
+      formHint.textContent = "링크 주소를 입력해주세요.";
+      return;
+    }
+
+    formHint.textContent = editingId ? "수정 중..." : "전송 중...";
+    submitBtn.disabled = true;
+
+    try {
+      let imageURL = existing ? (existing.imageURL || "") : "";
+      let imagePath = existing ? (existing.imagePath || "") : "";
+
+      if (file) {
+        const webpBlob = await fileToWebP(file);
+        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.webp`;
+        const newImagePath = `${STORAGE_FOLDER}/${fileName}`;
+        const storageRef = ref(storage, newImagePath);
+        await uploadBytes(storageRef, webpBlob, { contentType: "image/webp" });
+        imageURL = await getDownloadURL(storageRef);
+        // 수정 모드에서 새 이미지로 교체하는 경우, 기존 이미지는 삭제
+        if (existing && existing.imagePath) {
+          try { await deleteObject(ref(storage, existing.imagePath)); }
+          catch (err) { console.warn("이전 이미지 삭제 실패:", err); }
+        }
+        imagePath = newImagePath;
+      }
+
+      const linkURL = linkUrlRaw ? normalizeUrl(linkUrlRaw) : "";
+      const postData = {
+        imageURL,
+        imagePath,
+        linkTitle: linkTitle || "",
+        linkURL,
+        type: imageURL && linkURL ? "mixed" : imageURL ? "image" : "link"
+      };
+
+      if (editingId) {
+        await updateDoc(doc(db, POSTS_COLLECTION, editingId), postData);
+      } else {
+        await addDoc(collection(db, POSTS_COLLECTION), {
+          ...postData,
+          createdAt: serverTimestamp()
+        });
+      }
+
+      resetToCreateMode();
+      closeModalFn(addModalOverlay);
+    } catch (err) {
+      console.error(err);
+      formHint.textContent = "저장 중 오류가 발생했습니다. 다시 시도해주세요.";
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // ---------------- feed ----------------
+  function listenToPosts(){
+    const q = query(collection(db, POSTS_COLLECTION), orderBy("createdAt", "desc"), limit(60));
+    onSnapshot(
+      q,
+      (snapshot) => {
+        renderPosts(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+      },
+      (err) => {
+        console.error(err);
+        statusEl.textContent = "READ ERROR (Firestore 규칙을 확인하세요)";
+      }
+    );
+  }
+
+  function renderPosts(posts){
+    gallery.querySelectorAll(".card").forEach((el) => el.remove());
+    emptyState.style.display = posts.length ? "none" : "block";
+
+    postsCache.clear();
+
+    posts.forEach((post) => {
+      postsCache.set(post.id, post);
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.id = post.id;
+
+      // 우클릭: 수정/삭제 메뉴 표시
+      card.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        showContextMenu(e.clientX, e.clientY, post.id);
+      });
+
+      // 모바일 롱프레스로도 동일한 메뉴 사용
+      let pressTimer = null;
+      let longPressFired = false;
+      card.addEventListener("touchstart", (e) => {
+        longPressFired = false;
+        const touch = e.touches[0];
+        pressTimer = setTimeout(() => {
+          longPressFired = true;
+          if (navigator.vibrate) navigator.vibrate(15);
+          showContextMenu(touch.clientX, touch.clientY, post.id);
+        }, 550);
+      });
+      card.addEventListener("touchend", (e) => {
+        clearTimeout(pressTimer);
+        if (longPressFired) { e.preventDefault(); longPressFired = false; }
+      });
+      card.addEventListener("touchmove", () => clearTimeout(pressTimer));
+
+      if (post.imageURL) {
+        card.classList.add("image-card");
+        const img = document.createElement("img");
+        img.src = post.imageURL;
+        img.loading = "lazy";
+        img.alt = post.linkTitle || "cargo image";
+        card.appendChild(img);
+
+        if (post.linkURL) {
+          const badge = document.createElement("span");
+          badge.className = "link-badge";
+          badge.textContent = "LINK";
+          card.appendChild(badge);
+        }
+
+        card.addEventListener("click", (e) => {
+          if (post.linkURL && e.target.classList.contains("link-badge")) {
+            window.open(post.linkURL, "_blank", "noopener");
+            return;
+          }
+          lightboxImg.src = post.imageURL;
+          openModal(lightboxOverlay);
+        });
+      } else if (post.linkURL) {
+        card.classList.add("link-card");
+        const span = document.createElement("span");
+        span.textContent = post.linkTitle || post.linkURL;
+        card.appendChild(span);
+        card.addEventListener("click", () => {
+          window.open(post.linkURL, "_blank", "noopener");
+        });
+      }
+
+      gallery.appendChild(card);
+    });
+  }
+</script>
+</body>
+</html>
