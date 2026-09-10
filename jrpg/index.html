@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>JRPG</title>
+
+<!--
+  파비콘 자리
+  아래 href 값을 실제 파비콘 파일(ico/png/svg) 경로 또는 base64 데이터로 교체하세요.
+  예) <link rel="icon" href="favicon.png">
+-->
+<link rel="icon" id="app-favicon" href="data:,">
+
+<!--
+  폰트 로드 자리
+  지금은 한글을 지원하는 픽셀(도트) 폰트 Galmuri를 사용합니다(레트로 RPG 톤).
+  디자인이 또 바뀌면 원하는 폰트의 <link>(구글 폰트 등)를 이 자리에 추가하고,
+  아래 :root의 --font-family 값만 바꾸면 앱 전체 폰트가 한 번에 바뀝니다.
+  (참고: Galmuri는 11px의 배수 크기에서 가장 선명하게 보입니다)
+-->
+<!-- Tiny5: Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+
+<!-- Galmuri: jsDelivr (npm 패키지) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css">
+
+<style>
+  /* =========================================================
+     디자인 토큰 (Design Tokens)
+     -----------------------------------------------------------
+     차후 디자인 레퍼런스를 받으면 이 :root 값들(색상/폰트/라운드)만
+     교체해서 톤을 바꿉니다. 레이아웃/기능 관련 CSS는 건드리지 않습니다.
+     ========================================================= */
+  :root{
+    /* base palette — 코퍼·로즈골드 톤 (Princess Maker 계열 레트로 RPG), #000 / #fff 금지 */
+    --bg-outer:#120c0a;      /* PC에서 450px 바깥 여백 배경 */
+    --bg:#241512;            /* 앱 기본 배경 — 다크 마룬브라운 */
+    --surface:#301c17;       /* 카드/모달 표면 — 코퍼브라운 */
+    --surface-2:#3c261f;     /* 입력창/썸네일 배경 */
+    --border:#8a5a3a;        /* 이중선 프레임 기본색 (코퍼 골드) */
+    --border-dim:#5a3826;    /* 프레임 그림자쪽 어두운 라인 */
+    --text:#f2e2c9;          /* 크림/아이보리 */
+    --text-dim:#c7a184;      /* 더스티 로즈탄 */
+    --accent:#bc8d40;        /* 포인트 컬러 (버튼/스크롤바/틴트 기준) — 골드 유지 */
+    --accent-soft:rgba(216,162,74,.16);
+    --accent-2:#b43055;      /* 보조 포인트 (갤러리 틴트 등) — 로즈/버건디 */
+    --accent-2-soft:rgba(180,85,112,.24);
+    --danger:#c1616a;
+    --danger-soft:rgba(193,97,106,.16);
+    --shadow:#120c0a;
+
+    /* 폰트 교체 자리 — 디자인이 확정되면 이 값 하나만 바꾸면 앱 전체 폰트가 바뀝니다.
+       (제목/본문을 다른 폰트로 나누고 싶으면 --font-heading 변수를 추가해서 분리하세요)
+       지금은 한글 지원 픽셀 폰트 Galmuri11을 사용 중입니다. */
+    --font-family:'Tiny5', 'Galmuri11', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+
+    /* 픽셀/레트로 RPG 프레임 느낌을 위해 라운드를 모두 제거 */
+    --radius-s:0px;
+    --radius-m:0px;
+    --radius-l:0px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  html{
+    background:var(--bg-outer);
+    scrollbar-color: var(--accent) var(--surface); /* 파이어폭스 스크롤바 */
+    scrollbar-width: thin;
+  }
+  body{
+    font-family:var(--font-family);
+    color:var(--text);
+    background:var(--bg-outer);
+    min-height:100vh;
+  }
+
+  /* 스크롤바 색상 = 앱 톤에 맞춰 변수로 관리 (요구사항 3) */
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:var(--surface); }
+  ::-webkit-scrollbar-thumb{ background:var(--accent); border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--accent-2); }
+
+  a{ color:var(--accent); }
+
+  body.modal-lock{ overflow:hidden; }
+
+  /* ===================== 앱 셸 (모바일 우선, PC 450px 고정) ===================== */
+  .app-shell{
+    max-width:450px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--bg);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ===================== 나나곰 시메지 (돌아다니는 바탕화면 펫) ===================== */
+  .shimeji-sprite{
+    position:fixed;
+    width:120px;
+    height:120px;
+    object-fit:contain;
+    pointer-events:none;
+    z-index:50; /* 앱 콘텐츠 위, 모달 오버레이(90) 아래 */
+    transition-property:left;
+    transition-timing-function:linear;
+  }
+
+  /* ===================== [유튜브 구역] 미니 플레이어 바 ===================== */
+  .music-bar{
+    position:sticky;
+    top:0;
+    z-index:40;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 10px;
+    background:rgba(48,28,23,.94);
+    backdrop-filter:blur(8px);
+    border-bottom:4px double var(--border);
+  }
+  .music-toggle{
+    width:30px; height:30px; flex-shrink:0;
+    border-radius:0;
+    background:var(--accent);
+    border:2px solid var(--border-dim);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .music-toggle svg{ width:14px; height:14px; fill:var(--bg); }
+  .music-toggle .icon-pause{ display:none; }
+  .music-toggle[data-state="playing"] .icon-play{ display:none; }
+  .music-toggle[data-state="playing"] .icon-pause{ display:block; }
+  .music-title{
+    flex:1; min-width:0;
+    font-size:10px; color:var(--text-dim);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .music-add{
+    width:24px; height:24px; flex-shrink:0;
+    border-radius:0;
+    border:2px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text);
+    font-size:15px; line-height:1;
+    cursor:pointer;
+  }
+
+  /* ===================== 헤더 / 메인 ===================== */
+  .app-header{ padding:16px 16px 14px; border-bottom:2px solid var(--border-dim); }
+  .app-header h1{
+    margin:0;
+    font-family:var(--font-family);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:1px;
+    color:var(--accent);
+    position:relative;
+    display:inline-block;
+    padding-left:40px;
+  }
+  .app-header h1::before{
+    content:url('title.png');
+    position:absolute;
+    left:0; top:0;
+  }
+  .app-main{ padding:14px 16px 48px; flex:1; }
+
+  /* [캐릭터 구역] / [갤러리 구역] 을 수직으로 배치, 사이 여백만 구분 */
+  .section-characters{ margin-bottom:32px; }
+  .section-gallery{ }
+
+  .btn{
+    font-family:var(--font-family);
+    font-size:14px;
+    border-radius:0;
+    border:2px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text);
+    padding:10px 16px;
+    cursor:pointer;
+    box-shadow:2px 2px 0 var(--shadow);
+    transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .btn:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--shadow); }
+  .btn-primary{ background:var(--accent); color:var(--bg); border-color:var(--border-dim); font-weight:700; }
+  .btn-danger{ background:var(--danger-soft); color:var(--danger); border-color:var(--danger); }
+  .btn-ghost{ background:transparent; box-shadow:none; }
+  .btn-block{ width:100%; }
+  .btn-sm{ padding:6px 12px; font-size:12px; }
+
+  .empty-hint{ font-size:13px; color:var(--text-dim); text-align:center; padding:24px 8px; }
+
+  /* ===================== [캐릭터 구역] 그리드 ===================== */
+  .char-grid{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .char-card{ cursor:pointer; }
+  .char-card-img{
+    width:100%;
+    aspect-ratio:1/1;
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .char-card-img img{ width:100%; height:100%; object-fit:contain; }
+  .char-card-name{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:center;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+
+  /* ===================== 모달 공통 (바텀시트 형태) ===================== */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(15,14,19,.6);
+    opacity:0; pointer-events:none;
+    transition:opacity .2s ease;
+    z-index:90;
+  }
+  .modal-overlay.open{ opacity:1; pointer-events:auto; }
+
+  .modal{
+    position:fixed;
+    left:50%; bottom:0;
+    width:100%; max-width:450px;
+    max-height:88vh;
+    background:var(--surface);
+    border:4px double var(--border); border-bottom:none;
+    border-radius:0;
+    padding:20px 40px calc(20px + env(safe-area-inset-bottom));
+    overflow-y:auto;
+    transform:translate(-50%,100%);
+    transition:transform .25s ease;
+    box-shadow:0 -10px 30px var(--shadow);
+    z-index:100;
+  }
+  .modal.open{ transform:translate(-50%,0); }
+  /* 창(window) 위쪽 모서리 장식 — 바텀시트라 위쪽 두 모서리만 보임 */
+  .modal::before, .modal::after{
+  content: '';
+  position: absolute;
+  top: 5px;
+  width: 20px;
+  height: 20px;
+  background-image: url('gem.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-color: var(--border);
+  border: 1px solid var(--border);
+  box-sizing: content-box;
+  }
+  .modal::before{ left:5px; }
+  .modal::after{ right:5px; }
+
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:14px;
+    padding-bottom:10px;
+    border-bottom:2px solid var(--border-dim);
+  }
+  .modal-head h2{
+    margin:0; font-family:var(--font-family); font-size:17px; color:var(--accent);
+  }
+  .modal-close{
+    width:26px; height:26px;
+    border-radius:0;
+    border:0;
+    background:var(--surface-2);
+    color:var(--text-dim);
+    font-size:14px;
+    cursor:pointer;
+  }
+
+  .form-error{ font-size:12px; color:var(--danger); min-height:16px; margin:-4px 0 8px; }
+
+  /* ===================== 폼 요소 ===================== */
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12px; color:var(--text-dim); margin-bottom:5px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .field-row-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+
+  input[type="text"], input[type="number"], input[type="url"], textarea{
+    width:100%;
+    background:var(--surface-2);
+    border:2px solid var(--border);
+    border-radius:0;
+    padding:10px 12px;
+    color:var(--text);
+    font-family:var(--font-family);
+    font-size:14px;
+  }
+  .field-row-3 input{ padding:10px 8px; }
+  input:focus, textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  textarea.bio-textarea{ resize:vertical; min-height:130px; line-height:1.6; }
+
+  .format-hint{ font-size:11px; color:var(--text-dim); margin-bottom:6px; line-height:1.5; }
+
+  .img-upload-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .img-upload{
+    position:relative;
+    aspect-ratio:1/1;
+    border:2px solid var(--border);
+    border-radius:var(--radius-m);
+    background:var(--surface-2);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .img-upload input[type="file"]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .img-upload img{ width:100%; height:100%; object-fit:cover; }
+  .img-placeholder{ font-size:11px; color:var(--text-dim); text-align:center; padding:0 8px; }
+
+  /* ===================== 캐릭터 상세 ===================== */
+  .detail-images{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .detail-image-wrap{ position:relative; }
+  .detail-images img{
+    width:100%; max-height:340px;
+    object-fit:contain; display:block;
+    background:var(--surface-2);
+  }
+  .detail-image-download{
+    position:absolute; right:6px; bottom:6px;
+    width:26px; height:26px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:0; color:var(--accent);
+    font-size:14px; text-decoration:none; line-height:1;
+    cursor:pointer;
+  }
+  .detail-image-download:hover{ background:var(--surface); }
+  .detail-name{ font-family:var(--font-family); font-size:19px; margin:0 0 2px; color:var(--accent); }
+  .detail-meta{ font-size:12px; color:var(--text-dim); margin-bottom:14px; }
+  .detail-bio{ font-size:14px; line-height:1.75; margin-bottom:18px; }
+  .bio-headline{ display:block; font-family:var(--font-family); font-size:2em; margin:6px 0; line-height:1.3; }
+  .bio-small{ font-size:.85em; color:var(--text-dim); }
+  .detail-actions{ display:flex; gap:8px; margin-bottom:6px; }
+
+  .section-divider{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:0 0 10px;
+  }
+  .section-divider h3{ margin:0; font-family:var(--font-family); font-size:15px; color:var(--accent); }
+
+  /* ===================== [갤러리 구역] ===================== */
+  .gallery-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+  }
+  .gallery-item{
+    position:relative;
+    aspect-ratio:1/1;
+    border-radius:var(--radius-s);
+    overflow:hidden;
+    border:2px solid var(--border);
+    cursor:pointer;
+    background:var(--surface-2);
+  }
+  .gallery-item img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .gallery-tint{ position:absolute; inset:0; background:var(--accent-2-soft); mix-blend-mode:multiply; pointer-events:none; }
+  .gallery-link{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:6px; text-align:center; background:var(--accent-soft);
+  }
+  .gallery-link-icon{ font-size:18px; }
+  .gallery-link-title{
+    font-size:10.5px; color:var(--text-dim); margin-top:4px; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+
+  /* ===================== 이미지 뷰어 ===================== */
+  .viewer-body{ position:relative; display:flex; align-items:center; justify-content:center; min-height:280px; }
+  #viewerImg{ max-width:100%; max-height:68vh; border-radius:var(--radius-m); }
+  .viewer-nav{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:34px; height:34px; border-radius:0;
+    background:rgba(48,28,23,.85);
+    border:2px solid var(--border);
+    color:var(--text);
+    font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .viewer-prev{ left:6px; }
+  .viewer-next{ right:6px; }
+
+  /* ===================== 유튜브 재생목록 모달 ===================== */
+  .yt-add-row{ display:flex; gap:8px; margin-bottom:14px; }
+  .yt-add-row input{ flex:1; }
+  #playlistList{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  #playlistList li{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface-2); border:2px solid var(--border);
+    border-radius:0; padding:8px 10px;
+  }
+  .pl-title{ flex:1; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pl-remove{
+    width:20px; height:20px; border-radius:0;
+    border:1px solid var(--danger); background:var(--danger-soft); color:var(--danger);
+    cursor:pointer; font-size:13px; line-height:1;
+  }
+
+  /* ===================== 우클릭 컨텍스트 메뉴 ===================== */
+  .ctx-menu{
+    position:fixed; display:none; flex-direction:column;
+    background:var(--surface-2); border:2px solid var(--border);
+    border-radius:0; padding:4px; z-index:200;
+    box-shadow:0 6px 20px var(--shadow);
+    min-width:96px;
+  }
+  .ctx-menu.open{ display:flex; }
+  .ctx-menu button{
+    background:none; border:none; color:var(--text);
+    padding:8px 12px; text-align:left; font-size:13px;
+    border-radius:0; cursor:pointer;
+  }
+  .ctx-menu button:hover{ background:var(--surface); }
+  .ctx-menu button.ctx-danger{ color:var(--danger); }
+
+  /* ===================== 토스트 ===================== */
+  .toast{
+    position:fixed; left:50%; bottom:26px;
+    transform:translate(-50%,16px);
+    background:var(--surface-2); color:var(--text);
+    border:2px solid var(--border);
+    padding:10px 16px; border-radius:0;
+    font-size:13px; opacity:0;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:300; max-width:80%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ===================== [유튜브 구역] ===================== -->
+  <div class="music-bar">
+    <button id="musicToggle" class="music-toggle" data-state="paused" aria-label="재생/정지" type="button">
+      <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+    </button>
+    <span class="music-title" id="musicTitle">The bard has not arrived</span>
+    <button id="musicAddBtn" class="music-add" aria-label="음원 추가" type="button">+</button>
+  </div>
+
+  <!-- ===================== 헤더 ===================== -->
+  <header class="app-header">
+    <h1>JRPG</h1>
+  </header>
+
+  <!-- ===================== 메인 : [캐릭터 구역] → [갤러리 구역] 수직 배치 ===================== -->
+  <main class="app-main">
+
+    <section class="section-characters">
+      <button id="registerBtn" class="btn btn-primary btn-block" type="button">+ Register</button>
+      <div id="charGrid" class="char-grid"></div>
+    </section>
+
+    <section class="section-gallery">
+      <div class="section-divider">
+        <h3>Archives</h3>
+        <button class="btn btn-sm" id="galleryAddBtn" type="button">+ New Log</button>
+      </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- 유튜브 IFrame API 숨김 플레이어 -->
+<div id="ytHiddenPlayer" style="position:absolute; width:0; height:0; overflow:hidden;"></div>
+
+<!-- ===================== 오버레이 ===================== -->
+<div class="modal-overlay" id="overlay"></div>
+
+<!-- ===================== 모달: 유튜브 재생목록 ===================== -->
+<div class="modal" id="modalYoutube">
+  <div class="modal-head">
+    <h2>Songbook</h2>
+    <button class="modal-close" data-close="modalYoutube" type="button">✕</button>
+  </div>
+  <div class="yt-add-row">
+    <input type="url" id="ytUrlInput" placeholder="유튜브 주소를 붙여넣기">
+    <button class="btn btn-primary btn-sm" id="ytAddBtn" type="button">Add</button>
+  </div>
+  <ul id="playlistList"></ul>
+</div>
+
+<!-- ===================== 모달: 캐릭터 등록/수정 ===================== -->
+<div class="modal" id="modalCharForm">
+  <div class="modal-head">
+    <h2 id="charFormTitle">Register Companion</h2>
+    <button class="modal-close" data-close="modalCharForm" type="button">✕</button>
+  </div>
+
+  <div class="img-upload-row">
+    <label class="img-upload" id="charImgPreview1">
+      <span class="img-placeholder">img 1<br>(나나곰 파일을 올려주세요. 파일명엔 반드시 'nanagom'을 포함해 주세요.)</span>
+      <input type="file" id="charImg1" accept="image/*">
+    </label>
+    <label class="img-upload" id="charImgPreview2">
+      <span class="img-placeholder">img 2</span>
+      <input type="file" id="charImg2" accept="image/*">
+    </label>
+  </div>
+
+  <div class="field-row">
+    <div class="field"><label>Name</label><input type="text" id="charName"></div>
+    <div class="field"><label>Gender</label><input type="text" id="charGender"></div>
+  </div>
+  <div class="field-row-3">
+    <div class="field"><label>Age</label><input type="number" id="charAge"></div>
+    <div class="field"><label>Height(cm)</label><input type="number" id="charHeight"></div>
+    <div class="field"><label>Weight(kg)</label><input type="number" id="charWeight"></div>
+  </div>
+
+  <div class="field">
+    <div class="format-hint">서식: **굵게** · ##큰 글씨## · --작은 글씨--</div>
+    <textarea class="bio-textarea" id="charBio" placeholder="캐릭터 소개를 적어주세요"></textarea>
+  </div>
+
+  <div class="form-error" id="charFormError"></div>
+  <button class="btn btn-primary btn-block" id="charFormSubmit" type="button">SAVE</button>
+</div>
+
+<!-- ===================== 모달: 캐릭터 상세 ===================== -->
+<div class="modal" id="modalCharDetail">
+  <div class="modal-head">
+    <h2>Companion Card</h2>
+    <button class="modal-close" data-close="modalCharDetail" type="button">✕</button>
+  </div>
+
+  <div class="detail-images" id="detailImages"></div>
+  <p class="detail-name" id="detailName"></p>
+  <p class="detail-meta" id="detailMeta"></p>
+  <div class="detail-bio" id="detailBio"></div>
+
+  <div class="detail-actions">
+    <button class="btn" id="detailEditBtn" type="button">Edit</button>
+    <button class="btn btn-danger" id="detailDeleteBtn" type="button">Del</button>
+  </div>
+</div>
+
+<!-- ===================== 모달: 갤러리 글쓰기/수정 ===================== -->
+<div class="modal" id="modalGalleryForm">
+  <div class="modal-head">
+    <h2 id="galleryFormTitle">Archives</h2>
+    <button class="modal-close" data-close="modalGalleryForm" type="button">✕</button>
+  </div>
+
+  <div class="field">
+    <label>Upload</label>
+    <label class="img-upload" id="galleryImgPreview" style="aspect-ratio:16/10;">
+      <span class="img-placeholder">이미지를 선택하세요</span>
+      <input type="file" id="galleryImgInput" accept="image/*">
+    </label>
+  </div>
+
+  <div style="text-align:center;color:var(--text-dim);font-size:12px;margin:6px 0;">Otherwise</div>
+
+  <div class="field">
+    <label>Link URL</label>
+    <input type="url" id="galleryLinkUrl" placeholder="https://...">
+  </div>
+  <div class="field">
+    <label>Link Title</label>
+    <input type="text" id="galleryLinkTitle" placeholder="천악 체크리스트">
+  </div>
+
+  <div class="form-error" id="galleryFormError"></div>
+  <button class="btn btn-primary btn-block" id="galleryFormSubmit" type="button">SAVE</button>
+</div>
+
+<!-- ===================== 모달: 이미지 뷰어 ===================== -->
+<div class="modal" id="modalImageViewer">
+  <div class="modal-head">
+    <h2>img</h2>
+    <button class="modal-close" data-close="modalImageViewer" type="button">✕</button>
+  </div>
+  <div class="viewer-body">
+    <button class="viewer-nav viewer-prev" id="viewerPrev" type="button">‹</button>
+    <img id="viewerImg" src="" alt="">
+    <button class="viewer-nav viewer-next" id="viewerNext" type="button">›</button>
+  </div>
+</div>
+
+<!-- ===================== 컨텍스트 메뉴 ===================== -->
+<div class="ctx-menu" id="ctxMenu">
+  <button data-action="edit" type="button">Edit</button>
+  <button data-action="delete" type="button" class="ctx-danger">Del</button>
+</div>
+
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script type="module">
+
+    /* ============================================================
+       상태 저장
+       -----------------------------------------------------------
+       지금은 새로고침하면 초기화되는 메모리 상태만 사용합니다(브라우저 저장 없음).
+       이 앱은 추후 Firebase(Firestore 등)와 연동해서 깃허브에 올릴 예정이므로,
+       localStorage 같은 브라우저 전용 저장소는 쓰지 않습니다.
+  
+       한 파이어베이스 프로젝트에 여러 앱을 함께 올리는 경우, 아래 APP_NAMESPACE로
+       이 앱의 데이터를 구분합니다. 컬렉션명/문서명/스토리지 폴더명 등 Firebase 쪽에
+       경로를 만들 때 전부 이 접두사를 붙여서 사용하세요. (예: "jrpg_app" 컬렉션,
+       "jrpg_images/..." 스토리지 경로 등) 다른 프로젝트로 재사용할 땐 이 값만 바꾸면 됩니다.
+  
+       Firebase를 연동할 때는 loadState() / saveState() 두 함수의 내용만
+       아래처럼 교체하면 됩니다 (예시 — 실제 연동 전까지는 주석 상태로 둡니다):
+  
+       // import { initializeApp } from "https://www.gstatic.com/firebasejs/10.x/firebase-app.js";
+       // import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.x/firebase-firestore.js";
+       // const firebaseConfig = { apiKey: "...", projectId: "..." };
+       // const db = getFirestore(initializeApp(firebaseConfig));
+       //
+       // async function loadState(){
+       //   const snap = await getDoc(doc(db, APP_NAMESPACE + "app", "state"));
+       //   if(snap.exists()) Object.assign(state, snap.data());
+       // }
+       // async function saveState(){
+       //   await setDoc(doc(db, APP_NAMESPACE + "app", "state"), state);
+       // }
+       ============================================================ */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+    const firebaseConfig = { apiKey: "AIzaSyDdwSkHiw0l9XsRSOrf6_1r0Izitb7PV9U", projectId: "kasis-tfp" };
+    const db = getFirestore(initializeApp(firebaseConfig));
+    
+(function(){
+  "use strict";
+
+  /* ============================================================
+     유틸
+     ============================================================ */
+  var qs  = function(s){ return document.querySelector(s); };
+  var qsa = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  function uid(){ return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, function(ch){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+    });
+  }
+  function toast(msg){
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add('show'); });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ t.remove(); }, 300);
+    }, 2200);
+  }
+
+  var APP_NAMESPACE = 'jrpg_'; /* 파이어베이스 내 이 앱 데이터 구분용 접두사 — 컬렉션/문서/스토리지 경로에 붙여서 사용 */
+  var state = { characters: [], playlist: [], gallery: [] };
+
+ async function loadState(){
+   const snap = await getDoc(doc(db, APP_NAMESPACE + "app", "state"));
+   if(snap.exists()) Object.assign(state, snap.data());
+ }
+ async function saveState(){
+   await setDoc(doc(db, APP_NAMESPACE + "app", "state"), state);
+}
+  function getChar(id){
+    return state.characters.find(function(c){ return c.id === id; });
+  }
+
+  /* ============================================================
+     이미지 → webp 변환 (gif는 원본 유지)
+     ============================================================ */
+  function readAsDataURL(file){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onload = function(){ res(r.result); };
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+  function loadImageEl(src){
+    return new Promise(function(res, rej){
+      var img = new Image();
+      img.onload = function(){ res(img); };
+      img.onerror = rej;
+      img.src = src;
+    });
+  }
+  async function fileToStoredImage(file){
+    if(!file) return null;
+    var isGif = file.type === 'image/gif' || /\.gif$/i.test(file.name);
+    var dataUrl = await readAsDataURL(file);
+    if(isGif){
+      return { name: file.name, dataUrl: dataUrl };
+    }
+    var img = await loadImageEl(dataUrl);
+    var MAX = 1600;
+    var w = img.naturalWidth, h = img.naturalHeight;
+    if(w > MAX || h > MAX){
+      var scale = Math.min(MAX / w, MAX / h);
+      w = Math.round(w * scale); h = Math.round(h * scale);
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    var webpUrl = canvas.toDataURL('image/webp', 0.86);
+    return { name: file.name, dataUrl: webpUrl };
+  }
+
+  /* ============================================================
+     모달 관리 (스택 방식으로 중첩 모달 지원)
+     ============================================================ */
+  var overlay = qs('#overlay');
+  var modalStack = [];
+  function openModal(id){
+    overlay.classList.add('open');
+    var el = qs('#' + id);
+    el.style.zIndex = 100 + modalStack.length;
+    el.classList.add('open');
+    modalStack.push(id);
+  }
+  function closeModal(id){
+    var el = qs('#' + id);
+    el.classList.remove('open');
+    modalStack = modalStack.filter(function(x){ return x !== id; });
+    if(modalStack.length === 0) overlay.classList.remove('open');
+  }
+  function closeTopModal(){
+    if(modalStack.length) closeModal(modalStack[modalStack.length - 1]);
+  }
+  overlay.addEventListener('click', closeTopModal);
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeTopModal();
+  });
+  qsa('[data-close]').forEach(function(btn){
+    btn.addEventListener('click', function(){ closeModal(btn.dataset.close); });
+  });
+
+  /* ============================================================
+     [캐릭터 구역] 그리드 렌더링
+     ============================================================ */
+  var charGrid = qs('#charGrid');
+
+  function pickNanagomImage(images){
+    if(!images) return null;
+    var found = images.find(function(im){ return im && im.name && im.name.toLowerCase().indexOf('nanagom') !== -1; });
+    return found || images.find(function(im){ return !!im; }) || null;
+  }
+  /* 그리드 썸네일용과 달리, 실제로 파일명에 nanagom이 포함된 이미지만 반환 (시메지 전용) */
+  function pickNanagomStrict(images){
+    if(!images) return null;
+    return images.find(function(im){ return im && im.name && im.name.toLowerCase().indexOf('nanagom') !== -1; }) || null;
+  }
+
+  /* ============================================================
+     나나곰 시메지 — 등록된 나나곰 이미지가 화면을 돌아다니는 바탕화면 펫
+     ============================================================ */
+  var shimejiSprites = {}; // characterId -> { el, x, timer }
+
+  function getShimejiBounds(){
+    var rect = qs('.app-shell').getBoundingClientRect();
+    var minX = rect.left + 4;
+    var maxX = Math.max(minX, rect.right - 64 - 4);
+    return { minX: minX, maxX: maxX };
+  }
+
+  function shimejiStep(id){
+    var sprite = shimejiSprites[id];
+    if(!sprite) return;
+    var b = getShimejiBounds();
+    var nextX = b.minX + Math.random() * (b.maxX - b.minX);
+    var dist = Math.abs(nextX - sprite.x);
+    var duration = Math.max(1.2, dist / 45); // 초당 약 45px 속도
+    sprite.el.style.transitionDuration = duration + 's';
+    sprite.el.style.transform = nextX < sprite.x ? 'scaleX(-1)' : 'scaleX(1)';
+    sprite.el.style.left = nextX + 'px';
+    sprite.x = nextX;
+    var pause = 900 + Math.random() * 2500; // 도착 후 잠깐 멈춤
+    sprite.timer = setTimeout(function(){ shimejiStep(id); }, duration * 1000 + pause);
+  }
+
+  function syncShimeji(){
+    var activeIds = {};
+    var b = getShimejiBounds();
+    state.characters.forEach(function(c){
+      var img = pickNanagomStrict(c.images);
+      if(!img) return;
+      activeIds[c.id] = true;
+      var sprite = shimejiSprites[c.id];
+      if(!sprite){
+        var el = document.createElement('img');
+        el.className = 'shimeji-sprite';
+        el.src = img.dataUrl;
+        el.alt = c.name || '';
+        el.style.bottom = '12px';
+        var startX = b.minX + Math.random() * (b.maxX - b.minX);
+        el.style.left = startX + 'px';
+        document.body.appendChild(el);
+        shimejiSprites[c.id] = { el: el, x: startX, timer: null };
+        shimejiStep(c.id);
+      } else if(sprite.el.src !== img.dataUrl){
+        sprite.el.src = img.dataUrl;
+      }
+    });
+    Object.keys(shimejiSprites).forEach(function(id){
+      if(!activeIds[id]){
+        clearTimeout(shimejiSprites[id].timer);
+        shimejiSprites[id].el.remove();
+        delete shimejiSprites[id];
+      }
+    });
+  }
+
+  function renderCharGrid(){
+    if(!state.characters.length){
+      charGrid.innerHTML = '<p class="empty-hint" style="grid-column:1/-1;">No companions registered yet</p>';
+      return;
+    }
+    charGrid.innerHTML = state.characters.map(function(c){
+      var thumb = pickNanagomImage(c.images);
+      return '<div class="char-card" data-id="' + c.id + '">' +
+        '<div class="char-card-img">' + (thumb ? '<img src="' + thumb.dataUrl + '" alt="">' : '') + '</div>' +
+        '<div class="char-card-name">' + escapeHtml(c.name) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+  charGrid.addEventListener('click', function(e){
+    var card = e.target.closest('.char-card');
+    if(!card) return;
+    openCharDetail(card.dataset.id);
+  });
+
+  /* ============================================================
+     캐릭터 등록/수정 모달
+     ============================================================ */
+  var modalCharForm = qs('#modalCharForm');
+  var existingImg1 = null, existingImg2 = null;
+
+  function renderImgPreview(slot, img){
+    var el = qs('#charImgPreview' + slot);
+    var input = el.querySelector('input');
+    if(img){
+      el.innerHTML = '<img src="' + img.dataUrl + '" alt="">';
+      el.appendChild(input);
+    } else {
+      el.innerHTML = '<span class="img-placeholder">img ' + slot + (slot === '1' ? '<br>(나나곰 파일을 올려주세요. 파일명엔 반드시 nanagom을 포함해 주세요)' : '') + '</span>';
+      el.appendChild(input);
+    }
+  }
+
+  function resetCharForm(){
+    qs('#charName').value = '';
+    qs('#charGender').value = '';
+    qs('#charAge').value = '';
+    qs('#charHeight').value = '';
+    qs('#charWeight').value = '';
+    qs('#charBio').value = '';
+    qs('#charImg1').value = '';
+    qs('#charImg2').value = '';
+    qs('#charFormError').textContent = '';
+    existingImg1 = null; existingImg2 = null;
+    renderImgPreview('1', null);
+    renderImgPreview('2', null);
+    modalCharForm.dataset.editingId = '';
+  }
+
+  function openCharForm(existing){
+    resetCharForm();
+    if(existing){
+      modalCharForm.dataset.editingId = existing.id;
+      qs('#charFormTitle').textContent = 'Edit Companion';
+      qs('#charName').value = existing.name || '';
+      qs('#charGender').value = existing.gender || '';
+      qs('#charAge').value = existing.age || '';
+      qs('#charHeight').value = existing.height || '';
+      qs('#charWeight').value = existing.weight || '';
+      qs('#charBio').value = existing.bio || '';
+      existingImg1 = existing.images && existing.images[0] || null;
+      existingImg2 = existing.images && existing.images[1] || null;
+      renderImgPreview('1', existingImg1);
+      renderImgPreview('2', existingImg2);
+    } else {
+      qs('#charFormTitle').textContent = 'Register Companion';
+    }
+    openModal('modalCharForm');
+  }
+
+  qs('#charImg1').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(f) renderImgPreview('1', { dataUrl: URL.createObjectURL(f) });
+  });
+  qs('#charImg2').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(f) renderImgPreview('2', { dataUrl: URL.createObjectURL(f) });
+  });
+
+  qs('#registerBtn').addEventListener('click', function(){ openCharForm(null); });
+
+  qs('#charFormSubmit').addEventListener('click', async function(){
+    var errorEl = qs('#charFormError');
+    errorEl.textContent = '';
+    var name = qs('#charName').value.trim();
+    if(!name){ errorEl.textContent = '이름을 입력해주세요.'; return; }
+
+    var file1 = qs('#charImg1').files[0];
+    var file2 = qs('#charImg2').files[0];
+    var img1 = existingImg1, img2 = existingImg2;
+    if(file1) img1 = await fileToStoredImage(file1);
+    if(file2) img2 = await fileToStoredImage(file2);
+
+    var names = [img1 && img1.name, img2 && img2.name];
+    var hasNanagom = names.some(function(n){ return n && n.toLowerCase().indexOf('nanagom') !== -1; });
+    if(!hasNanagom){
+      errorEl.textContent = '이미지 파일명 중 하나에는 "nanagom"이 포함되어야 등록할 수 있어요.';
+      return;
+    }
+
+    var editingId = modalCharForm.dataset.editingId;
+    var charData = {
+      id: editingId || uid(),
+      images: [img1, img2],
+      name: name,
+      gender: qs('#charGender').value.trim(),
+      age: qs('#charAge').value.trim(),
+      height: qs('#charHeight').value.trim(),
+      weight: qs('#charWeight').value.trim(),
+      bio: qs('#charBio').value
+    };
+
+    if(editingId){
+      var idx = state.characters.findIndex(function(c){ return c.id === editingId; });
+      state.characters[idx] = charData;
+    } else {
+      state.characters.push(charData);
+    }
+    saveState();
+    renderCharGrid();
+    syncShimeji();
+    closeModal('modalCharForm');
+    if(modalStack.indexOf('modalCharDetail') !== -1) renderCharDetail(charData.id);
+    resetCharForm();
+  });
+
+  /* ============================================================
+     텍스트 서식 렌더링 (**굵게** / ##큰글씨## / --작은글씨--)
+     ============================================================ */
+  function renderBio(text){
+    var t = escapeHtml(text || '');
+    t = t.replace(/##([^#]+)##/g, '<span class="bio-headline">$1</span>');
+    t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    t = t.replace(/--([^-]+)--/g, '<span class="bio-small">$1</span>');
+    t = t.replace(/\n/g, '<br>');
+    return t;
+  }
+
+  /* ============================================================
+     캐릭터 상세 모달
+     ============================================================ */
+  var modalCharDetail = qs('#modalCharDetail');
+
+  function renderCharDetail(id){
+    var c = getChar(id);
+    if(!c) return;
+    modalCharDetail.dataset.charId = id;
+    qs('#detailImages').innerHTML = (c.images || []).filter(Boolean)
+      .map(function(im){
+        return '<div class="detail-image-wrap">' +
+          '<img src="' + im.dataUrl + '" alt="">' +
+          '<a class="detail-image-download" href="' + im.dataUrl + '" download="' + escapeHtml(im.name || 'image') + '" title="원본 이미지 다운로드">⭳</a>' +
+        '</div>';
+      }).join('');
+    qs('#detailName').textContent = c.name;
+    qs('#detailMeta').textContent = [
+      c.gender,
+      c.age ? c.age + '세' : '',
+      c.height ? c.height + 'cm' : '',
+      c.weight ? c.weight + 'kg' : ''
+    ].filter(Boolean).join(' · ');
+    qs('#detailBio').innerHTML = renderBio(c.bio);
+  }
+
+  function openCharDetail(id){
+    renderCharDetail(id);
+    openModal('modalCharDetail');
+  }
+
+  qs('#detailEditBtn').addEventListener('click', function(){
+    var c = getChar(modalCharDetail.dataset.charId);
+    if(c) openCharForm(c);
+  });
+  qs('#detailDeleteBtn').addEventListener('click', function(){
+    var id = modalCharDetail.dataset.charId;
+    if(!confirm('이 캐릭터를 삭제할까요?')) return;
+    state.characters = state.characters.filter(function(c){ return c.id !== id; });
+    saveState();
+    renderCharGrid();
+    syncShimeji();
+    closeModal('modalCharDetail');
+  });
+
+  /* ============================================================
+     [갤러리 구역] — 캐릭터 리스트 아래, 앱 전체 공용 게시판
+     ============================================================ */
+  var galleryGrid = qs('#galleryGrid');
+  var modalGalleryForm = qs('#modalGalleryForm');
+
+  function renderGalleryGrid(){
+    if(!state.gallery.length){
+      galleryGrid.innerHTML = '<p class="empty-hint" style="grid-column:1/-1;">No entries in the log</p>';
+      return;
+    }
+    galleryGrid.innerHTML = state.gallery.map(function(g){
+      if(g.type === 'image'){
+        return '<div class="gallery-item" data-id="' + g.id + '" data-type="image">' +
+          '<img src="' + g.dataUrl + '" alt="">' +
+          '<div class="gallery-tint"></div>' +
+        '</div>';
+      }
+      return '<div class="gallery-item gallery-link" data-id="' + g.id + '" data-type="link">' +
+        '<div class="gallery-link-icon">🔗</div>' +
+        '<div class="gallery-link-title">' + escapeHtml(g.title || g.url) + '</div>' +
+        '<div class="gallery-tint"></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  galleryGrid.addEventListener('click', function(e){
+    var item = e.target.closest('.gallery-item');
+    if(!item) return;
+    var g = state.gallery.find(function(x){ return x.id === item.dataset.id; });
+    if(!g) return;
+    if(g.type === 'link') window.open(g.url, '_blank');
+    else openImageViewer(g.id);
+  });
+  galleryGrid.addEventListener('contextmenu', function(e){
+    var item = e.target.closest('.gallery-item');
+    if(!item) return;
+    e.preventDefault();
+    showCtxMenu(e.pageX, e.pageY, { itemId: item.dataset.id });
+  });
+
+  function resetGalleryForm(){
+    qs('#galleryImgInput').value = '';
+    qs('#galleryLinkUrl').value = '';
+    qs('#galleryLinkTitle').value = '';
+    qs('#galleryFormError').textContent = '';
+    qs('#galleryImgPreview').innerHTML = '<span class="img-placeholder">이미지를 선택하세요</span>' +
+      '<input type="file" id="galleryImgInput" accept="image/*">';
+    qs('#galleryImgInput').addEventListener('change', onGalleryImgChange);
+    modalGalleryForm.dataset.editingId = '';
+  }
+  function onGalleryImgChange(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var el = qs('#galleryImgPreview');
+    var input = el.querySelector('input');
+    el.innerHTML = '<img src="' + URL.createObjectURL(f) + '" alt="">';
+    el.appendChild(input);
+  }
+  qs('#galleryImgInput').addEventListener('change', onGalleryImgChange);
+
+  function openGalleryForm(existing){
+    resetGalleryForm();
+    if(existing){
+      modalGalleryForm.dataset.editingId = existing.id;
+      qs('#galleryFormTitle').textContent = 'Edit Log';
+      if(existing.type === 'link'){
+        qs('#galleryLinkUrl').value = existing.url;
+        qs('#galleryLinkTitle').value = existing.title || '';
+      } else {
+        var el = qs('#galleryImgPreview');
+        var input = el.querySelector('input');
+        el.innerHTML = '<img src="' + existing.dataUrl + '" alt="">';
+        el.appendChild(input);
+      }
+    } else {
+      qs('#galleryFormTitle').textContent = 'New Log';
+    }
+    openModal('modalGalleryForm');
+  }
+  qs('#galleryAddBtn').addEventListener('click', function(){
+    openGalleryForm(null);
+  });
+
+  qs('#galleryFormSubmit').addEventListener('click', async function(){
+    var errorEl = qs('#galleryFormError');
+    errorEl.textContent = '';
+
+    var file = qs('#galleryImgInput').files[0];
+    var linkUrl = qs('#galleryLinkUrl').value.trim();
+    var linkTitle = qs('#galleryLinkTitle').value.trim();
+
+    if(!file && !linkUrl){
+      errorEl.textContent = '이미지 또는 링크 중 하나는 입력해야 해요.';
+      return;
+    }
+
+    var editingId = modalGalleryForm.dataset.editingId;
+    var entry;
+    if(file){
+      var stored = await fileToStoredImage(file);
+      entry = { id: editingId || uid(), type: 'image', dataUrl: stored.dataUrl, name: stored.name };
+    } else {
+      entry = { id: editingId || uid(), type: 'link', url: linkUrl, title: linkTitle || linkUrl };
+    }
+
+    if(editingId){
+      var idx = state.gallery.findIndex(function(g){ return g.id === editingId; });
+      if(idx !== -1) state.gallery[idx] = entry;
+    } else {
+      state.gallery.push(entry);
+    }
+    saveState();
+    renderGalleryGrid();
+    closeModal('modalGalleryForm');
+    resetGalleryForm();
+  });
+
+  /* ============================================================
+     이미지 뷰어 (이전/다음 이동)
+     ============================================================ */
+  var modalImageViewer = qs('#modalImageViewer');
+  function openImageViewer(itemId){
+    var imgs = state.gallery.filter(function(g){ return g.type === 'image'; });
+    var idx = imgs.findIndex(function(g){ return g.id === itemId; });
+    function show(i){
+      idx = (i + imgs.length) % imgs.length;
+      qs('#viewerImg').src = imgs[idx].dataUrl;
+    }
+    show(idx);
+    qs('#viewerPrev').onclick = function(){ show(idx - 1); };
+    qs('#viewerNext').onclick = function(){ show(idx + 1); };
+    openModal('modalImageViewer');
+  }
+
+  /* ============================================================
+     컨텍스트 메뉴 (갤러리 수정/삭제)
+     ============================================================ */
+  var ctxMenu = qs('#ctxMenu');
+  var ctxPayload = null;
+  function showCtxMenu(x, y, payload){
+    ctxPayload = payload;
+    ctxMenu.style.left = x + 'px';
+    ctxMenu.style.top = y + 'px';
+    ctxMenu.classList.add('open');
+  }
+  document.addEventListener('click', function(e){
+    if(!ctxMenu.contains(e.target)) ctxMenu.classList.remove('open');
+  });
+  ctxMenu.addEventListener('click', function(e){
+    var btn = e.target.closest('button');
+    if(!btn || !ctxPayload) return;
+    if(btn.dataset.action === 'delete'){
+      if(confirm('이 게시물을 삭제할까요?')){
+        state.gallery = state.gallery.filter(function(g){ return g.id !== ctxPayload.itemId; });
+        saveState();
+        renderGalleryGrid();
+      }
+    } else if(btn.dataset.action === 'edit'){
+      var item = state.gallery.find(function(g){ return g.id === ctxPayload.itemId; });
+      if(item) openGalleryForm(item);
+    }
+    ctxMenu.classList.remove('open');
+  });
+
+  /* ============================================================
+     유튜브 플레이어
+     ============================================================ */
+  var musicToggle = qs('#musicToggle');
+  var musicTitle = qs('#musicTitle');
+  var ytPlayer = null, ytReady = false;
+
+  window.onYouTubeIframeAPIReady = function(){
+    ytPlayer = new YT.Player('ytHiddenPlayer', {
+      height: '0', width: '0',
+      playerVars: { autoplay: 0, controls: 0 },
+      events: {
+        onReady: function(){ ytReady = true; },
+        onStateChange: onYtStateChange
+      }
+    });
+  };
+  function onYtStateChange(e){
+    if(e.data === YT.PlayerState.PLAYING) musicToggle.dataset.state = 'playing';
+    else if(e.data === YT.PlayerState.PAUSED) musicToggle.dataset.state = 'paused';
+    else if(e.data === YT.PlayerState.ENDED) playRandom();
+  }
+
+  function extractVideoId(url){
+    var patterns = [
+      /youtu\.be\/([a-zA-Z0-9_-]{6,})/,
+      /[?&]v=([a-zA-Z0-9_-]{6,})/,
+      /embed\/([a-zA-Z0-9_-]{6,})/,
+      /shorts\/([a-zA-Z0-9_-]{6,})/
+    ];
+    for(var i = 0; i < patterns.length; i++){
+      var m = url.match(patterns[i]);
+      if(m) return m[1];
+    }
+    return null;
+  }
+  async function fetchTitle(videoId){
+    try{
+      var res = await fetch('https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' + videoId + '&format=json');
+      if(res.ok){
+        var data = await res.json();
+        return data.title;
+      }
+    }catch(e){}
+    return '(제목을 가져올 수 없음)';
+  }
+
+  function renderPlaylist(){
+    var list = qs('#playlistList');
+    if(!state.playlist.length){
+      list.innerHTML = '<p class="empty-hint">No melodies in the songbook</p>';
+      return;
+    }
+    list.innerHTML = state.playlist.map(function(p){
+      return '<li><span class="pl-title">' + escapeHtml(p.title) + '</span>' +
+        '<button class="pl-remove" data-id="' + p.id + '" type="button">×</button></li>';
+    }).join('');
+  }
+  qs('#playlistList').addEventListener('click', function(e){
+    var btn = e.target.closest('.pl-remove');
+    if(!btn) return;
+    state.playlist = state.playlist.filter(function(p){ return p.id !== btn.dataset.id; });
+    saveState();
+    renderPlaylist();
+  });
+
+  qs('#musicAddBtn').addEventListener('click', function(){
+    renderPlaylist();
+    openModal('modalYoutube');
+  });
+  qs('#ytAddBtn').addEventListener('click', addTrack);
+  qs('#ytUrlInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') addTrack();
+  });
+  async function addTrack(){
+    var input = qs('#ytUrlInput');
+    var url = input.value.trim();
+    if(!url) return;
+    var vid = extractVideoId(url);
+    if(!vid){ toast('유효한 유튜브 주소가 아니에요.'); return; }
+    var title = await fetchTitle(vid);
+    state.playlist.push({ id: uid(), videoId: vid, url: url, title: title });
+    saveState();
+    input.value = '';
+    renderPlaylist();
+  }
+
+  function playRandom(){
+    if(!state.playlist.length){ toast('먼저 음원을 추가해주세요.'); return; }
+    var pick = state.playlist[Math.floor(Math.random() * state.playlist.length)];
+    musicTitle.textContent = pick.title;
+    if(ytPlayer && ytReady){
+      ytPlayer.loadVideoById(pick.videoId);
+      ytPlayer.playVideo();
+    }
+  }
+  musicToggle.addEventListener('click', function(){
+    if(!ytReady){ toast('플레이어를 불러오는 중이에요.'); return; }
+    var st = musicToggle.dataset.state;
+    if(st === 'playing'){
+      ytPlayer.pauseVideo();
+    } else {
+      var cur = ytPlayer.getPlayerState ? ytPlayer.getPlayerState() : -1;
+      if(cur === 2) ytPlayer.playVideo(); // 일시정지 상태면 이어재생
+      else playRandom(); // 처음 재생이면 랜덤 선곡
+    }
+  });
+
+  /* ============================================================
+     초기화
+     ============================================================ */
+  loadState().then(function () {
+    renderCharGrid();
+    renderGalleryGrid();
+    renderPlaylist();
+    syncShimeji();
+    window.addEventListener('resize', syncShimeji);
+  });
+
+})();
+</script>
+</body>
+</html>
