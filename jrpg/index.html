@@ -1265,7 +1265,7 @@
   }
 
   function playRandom(){
-    if(!state.playlist.length){ toast('먼저 음원을 추가해주세요.'); return; }
+    if(!state.playlist.length){ toast('먼저 음유시인을 불러주세요.'); return; }
     var pick = state.playlist[Math.floor(Math.random() * state.playlist.length)];
     musicTitle.textContent = pick.title;
     if(ytPlayer && ytReady){
@@ -1274,7 +1274,7 @@
     }
   }
   musicToggle.addEventListener('click', function(){
-    if(!ytReady){ toast('플레이어를 불러오는 중이에요.'); return; }
+    if(!ytReady){ toast('음유시인을 불러오는 중이에요.'); return; }
     var st = musicToggle.dataset.state;
     if(st === 'playing'){
       ytPlayer.pauseVideo();
