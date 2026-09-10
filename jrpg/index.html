@@ -604,7 +604,10 @@
   <button data-action="delete" type="button" class="ctx-danger">Del</button>
 </div>
 
-
+  <script>
+    window.__ytApiReady = false;
+    window.onYouTubeIframeAPIReady = function () {window.__ytApiReady = true;};
+  </script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script type="module">
 
@@ -1184,16 +1187,26 @@
   var musicTitle = qs('#musicTitle');
   var ytPlayer = null, ytReady = false;
 
-  window.onYouTubeIframeAPIReady = function(){
+  function initYtPlayer() {
     ytPlayer = new YT.Player('ytHiddenPlayer', {
       height: '0', width: '0',
-      playerVars: { autoplay: 0, controls: 0 },
+      playerVars: {autoplay: 0, controls: 0},
       events: {
-        onReady: function(){ ytReady = true; },
+        onReady: function () {ytReady = true;},
         onStateChange: onYtStateChange
       }
     });
-  };
+  }
+  if (window.__ytApiReady) {
+    initYtPlayer();
+  } else {
+    var waitYt = setInterval(function () {
+      if (window.__ytApiReady) {
+        clearInterval(waitYt);
+        initYtPlayer();
+      }
+    }, 50);
+  }
   function onYtStateChange(e){
     if(e.data === YT.PlayerState.PLAYING) musicToggle.dataset.state = 'playing';
     else if(e.data === YT.PlayerState.PAUSED) musicToggle.dataset.state = 'paused';
