@@ -380,8 +380,25 @@ body * { cursor: inherit !important; }
   }
 
   /* ===================== 이미지 뷰어 ===================== */
-  .viewer-body{ position:relative; display:flex; align-items:center; justify-content:center; min-height:280px; }
-  #viewerImg{ max-width:100%; max-height:68vh; border-radius:var(--radius-m); }
+  /* #modalImageViewer만 공용 .modal(바텀시트)을 뒤엎고 전체화면 오버레이로 표시.
+     다른 모달(캐릭터 폼/상세, 갤러리 등록, 유튜브)은 기존 바텀시트 그대로 유지. */
+  #modalImageViewer{
+    left:0; bottom:auto; top:0;
+    width:100%; max-width:none;
+    height:100%; max-height:none;
+    background:rgba(18,10,8,.92);
+    border:none;
+    padding:16px;
+    display:flex; flex-direction:column;
+    transform:none;
+    opacity:0; pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  #modalImageViewer.open{ opacity:1; pointer-events:auto; transform:none; }
+  #modalImageViewer::before, #modalImageViewer::after{ content:none; } /* 코너 장식은 바텀시트 전용이라 제외 */
+  #modalImageViewer .modal-head{ flex:0 0 auto; border-bottom:none; }
+  .viewer-body{ position:relative; flex:1; display:flex; align-items:center; justify-content:center; min-height:0; }
+  #viewerImg{ max-width:90vw; max-height:82vh; width:auto; height:auto; object-fit:contain; border-radius:var(--radius-m); }
   .viewer-nav{
     position:absolute; top:50%; transform:translateY(-50%);
     width:34px; height:34px; border-radius:0;
@@ -394,6 +411,16 @@ body * { cursor: inherit !important; }
   }
   .viewer-prev{ left:6px; }
   .viewer-next{ right:6px; }
+  .viewer-download{
+    position:absolute; right:6px; bottom:6px;
+    width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(48,28,23,.85); border:2px solid var(--border);
+    border-radius:0; color:var(--accent);
+    font-size:16px; text-decoration:none; line-height:1;
+    cursor:pointer;
+  }
+  .viewer-download:hover{ background:var(--surface); }
 
   /* ===================== 유튜브 재생목록 모달 ===================== */
   .yt-add-row{ display:flex; gap:8px; margin-bottom:14px; }
@@ -598,6 +625,7 @@ body * { cursor: inherit !important; }
     <button class="viewer-nav viewer-prev" id="viewerPrev" type="button">‹</button>
     <img id="viewerImg" src="" alt="">
     <button class="viewer-nav viewer-next" id="viewerNext" type="button">›</button>
+    <a class="viewer-download" id="viewerDownload" href="" download="" title="이미지 다운로드">⭳</a>
   </div>
 </div>
 
@@ -1146,6 +1174,9 @@ body * { cursor: inherit !important; }
     function show(i){
       idx = (i + imgs.length) % imgs.length;
       qs('#viewerImg').src = imgs[idx].dataUrl;
+      var dl = qs('#viewerDownload');
+      dl.href = imgs[idx].dataUrl;
+      dl.download = imgs[idx].name || 'image';
     }
     show(idx);
     qs('#viewerPrev').onclick = function(){ show(idx - 1); };
