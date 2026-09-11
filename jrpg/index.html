@@ -67,10 +67,7 @@
   html,body{margin:0;padding:0;
             cursor: url('./cursor.png') 4 4, auto; /* 중괄호 안으로 이동 */
 }
-
-a, button, .link-item, .add-btn{
-  cursor: url('./cursor.png') 4 4, auto;
-}
+* { cursor: inherit !important; }
   html{
     background:var(--bg-outer);
     scrollbar-color: var(--accent) var(--surface); /* 파이어폭스 스크롤바 */
